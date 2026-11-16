@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DropReport.App.ViewModels"
+             x:Class="DropReport.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="48,34,48,40" MaxWidth="900" HorizontalAlignment="Left">
+      <TextBlock Text="SETTINGS" Classes="kicker" Margin="0,0,0,10" />
+      <Border Classes="goldrule" />
+      <TextBlock Text="Settings" Classes="display" Margin="0,16,0,4" />
+      <TextBlock Text="Where your replays come from, how names show, and where your data lives." Classes="dek" Margin="0,0,0,24" />
+
+      <!-- replays -->
+      <Border Classes="rule" />
+      <StackPanel Spacing="10" Margin="0,14,0,28">
+        <TextBlock Classes="kicker" Text="REPLAYS" />
+        <TextBlock Text="Fortnite's replay folder" Classes="sub" />
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Text="{Binding ReplayFolder}" />
+          <Button Grid.Column="1" Classes="ghost" Content="Browse" Margin="8,0,0,0" Click="OnBrowseReplay" />
+        </Grid>
+        <TextBlock Text="Extra folders to import old replays from" Classes="sub" Margin="0,6,0,0" />
+        <ItemsControl ItemsSource="{Binding ExtraFolders}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <Border Classes="rowline" Padding="0,6">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Classes="ghost" Content="Remove" Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).RemoveExtraFolderCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Classes="ghost" Content="Add folder" Click="OnAddFolder" />
+        <ToggleSwitch IsChecked="{Binding WatchWhileOpen}" OnContent="Watch for new replays while Drop Report is open" OffContent="Watch for new replays while Drop Report is open" Margin="0,6,0,0" />
+        <TextBlock Classes="note" Text="Drop Report never starts with Windows and never runs during a match being recorded. It reads finished replay files at low priority, so your game isn't slowed down." />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <Button Classes="ghost" Content="Re-read all saved replays" Command="{Binding RereadAllCommand}" />
+          <TextBlock Text="{Binding Message}" Classes="sub" VerticalAlignment="Center" />
+        </StackPanel>
+      </StackPanel>
+
+      <!-- names -->
+      <Border Classes="rule" />
+      <StackPanel Spacing="10" Margin="0,14,0,28">
+        <TextBlock Classes="kicker" Text="ITEM NAMES" />
+        <TextBlock Text="{Binding NamesText}" Classes="rowname" />
+        <TextBlock Classes="note" Text="Real names come from your own game files. After each Fortnite update, update them so new items get their names." />
+        <Button Classes="ghost" Content="Update item names" Command="{Binding UpdateNamesCommand}" />
+      </StackPanel>
+
+      <!-- display + privacy -->
+      <Border Classes="rule" />
+      <StackPanel Spacing="10" Margin="0,14,0,0">
+        <TextBlock Classes="kicker" Text="DISPLAY AND PRIVACY" />
+        <ToggleSwitch IsChecked="{Binding LightTheme}" OnContent="Light theme" OffContent="Dark theme" />
+        <ToggleSwitch IsChecked="{Binding HideNames}" OnContent="Hide other players' names" OffContent="Show other players' names" />
+        <TextBlock Classes="note" Text="Everything stays on this PC. No account, no telemetry. Hiding names is handy for screenshots and streams." />
+        <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
+          <TextBlock Text="{Binding DataFolder}" Classes="sub" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Classes="ghost" Content="Open data folder" Command="{Binding OpenDataFolderCommand}" />
+        </Grid>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

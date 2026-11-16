@@ -1,7 +1,7 @@
-# How Booty Board decodes a replay
+# How Drop Report decodes a replay
 
 Everything here was verified against real replays and the game's own files (game version 43.10). Code references are
-to `src/BootyBoard.ReplayReader`.
+to `src/DropReport.ReplayReader`.
 
 ## Reading
 - Parser: FortniteReplayReader 3.2 in `ParseMode.Debug` (chests and some stats only parse in Debug). Custom export
@@ -58,7 +58,7 @@ to `src/BootyBoard.ReplayReader`.
   WITHOUT a BotId.
 - Names: `PlayerName` (bots too; NPCs also carry it in `PlayerNameCustomOverride`). Players in anonymous mode still
   have their account name in the replay but no anonymous tag (0 of 23 anonymous players over 677 players had one), so
-  Booty Board shows them as "Anonymous player" to respect their choice. A streamer-mode name is used when present.
+  Drop Report shows them as "Anonymous player" to respect their choice. A streamer-mode name is used when present.
 
 ## Map overlay (`MapGeo.cs`, `GameDataBuilder.MapCamera`)
 - The replay's own map fields (`MapData.WorldGrid*`, `GameData.MapInfo`) decode as garbage/empty with this parser.
@@ -74,7 +74,7 @@ to `src/BootyBoard.ReplayReader`.
 - Other map variants in `BlastBerryMapUI` (BlastBerry, DashBerry, JumpBear...) have their own images in the game files
   (`Capture_Iteration_Discovered_<Map>`) and camera data; not used yet.
 
-## Item names (`src/BootyBoard.GameData`)
+## Item names (`src/DropReport.GameData`)
 - Read with CUE4Parse from the installed game (IoStore). Needs the version's AES key, a mappings (.usmap) file and Oodle.
 - The name is `ItemName` (not DisplayName). Rarity is a gameplay tag in the `DataList` fragments
   (`Rarity.VeryRare` = Epic, `SuperRare` = Legendary, `Mythic`, `Transcendent` = shown in game as Exotic). The id

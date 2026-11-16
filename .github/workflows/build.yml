@@ -18,18 +18,18 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Test
-        run: dotnet test tests/BootyBoard.Tests -c Release
+        run: dotnet test tests/DropReport.Tests -c Release
       - name: Publish single-file exe
-        run: dotnet publish src/BootyBoard.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
+        run: dotnet publish src/DropReport.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
       - uses: actions/upload-artifact@v4
         with:
-          name: BootyBoard
-          path: publish/BootyBoard.exe
+          name: DropReport
+          path: publish/DropReport.exe
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            publish/BootyBoard.exe
+            publish/DropReport.exe
             THIRD-PARTY-NOTICES.md
           generate_release_notes: true

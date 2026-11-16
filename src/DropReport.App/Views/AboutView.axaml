@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DropReport.App.ViewModels"
+             x:Class="DropReport.App.Views.AboutView"
+             x:DataType="vm:AboutViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="48,34,48,40" MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Text="{Binding Version}" Classes="kicker" Margin="0,0,0,10" />
+      <Border Classes="goldrule" />
+      <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,18,0,6">
+        <Path Data="{StaticResource BrandMark}" Fill="{DynamicResource AccentBrush}" Width="40" Height="48" Stretch="Uniform" VerticalAlignment="Center" />
+        <TextBlock Text="Drop Report" Classes="hero" FontSize="72" VerticalAlignment="Center" />
+      </StackPanel>
+      <TextBlock Classes="dek" Margin="0,0,0,28" Text="Drop Report reads the replay files your game saves after each match and turns them into the stats the replay viewer doesn't show: chests for you and your team, this season's special chests and items, weapons with real names, damage and headshots, knocks vs eliminations, how you went down, and a playable map of every match." />
+
+      <Border Classes="rule" />
+      <TextBlock Classes="kicker" Text="SAFE BY DESIGN" Margin="0,14,0,8" />
+      <TextBlock Classes="dek" Margin="0,0,0,28" Text="Drop Report only reads files on disk: finished replay files, and (for item names) the game's own data files. It never reads game memory, never injects anything and never touches the running game, which is what anti-cheat watches for. It doesn't need admin rights, doesn't start with Windows, and sends nothing anywhere: no account, no telemetry." />
+
+      <Border Classes="rule" />
+      <TextBlock Classes="kicker" Text="FREE FOREVER" Margin="0,14,0,8" />
+      <TextBlock Classes="dek" Text="Drop Report is free and open source. If it helps you, you can support development; it never unlocks anything." />
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,14,0,28">
+        <Button Classes="gold" Content="Support Drop Report" Command="{Binding DonateCommand}" IsVisible="{Binding HasDonation}" />
+        <Button Classes="ghost" Content="Source code" Command="{Binding RepoCommand}" IsVisible="{Binding HasRepo}" />
+        <Button Classes="ghost" Content="Open-source licenses" Command="{Binding LicensesCommand}" />
+      </StackPanel>
+
+      <Border Classes="rule" />
+      <TextBlock Classes="kicker" Text="NOT AFFILIATED WITH EPIC GAMES" Margin="0,14,0,8" />
+      <TextBlock Classes="dek" Text="{Binding Disclaimer}" />
+      <TextBlock Classes="note" Margin="0,10,0,0" Text="Built with FortniteReplayReader (MIT), CUE4Parse (Apache-2.0) and Avalonia (MIT). Type: Barlow Condensed and Inter (SIL Open Font License)." />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DropReport.App.ViewModels"
+        x:Class="DropReport.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Drop Report" Width="1360" Height="880" MinWidth="1040" MinHeight="660"
+        Icon="/Assets/dropreport.ico" WindowStartupLocation="CenterScreen">
+  <Grid ColumnDefinitions="248,*">
+    <!-- masthead + contents -->
+    <Border Background="{DynamicResource NavBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
+      <DockPanel Margin="22,26,18,18">
+        <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,26">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Path Data="{StaticResource BrandMark}" Fill="{DynamicResource AccentBrush}" Width="22" Height="26" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Text="Drop Report" Classes="brand" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock Text="YOUR REPLAY STATS" Classes="kicker" Margin="32,2,0,0" />
+          <Border Classes="goldrule" Margin="0,16,0,0" Height="1" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Spacing="10">
+          <Border Classes="rule" Margin="0,0,0,6" />
+          <Button Classes="gold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding ScanCommand}" IsEnabled="{Binding !Busy}">
+            <TextBlock Text="Scan for new replays" />
+          </Button>
+          <ProgressBar IsIndeterminate="True" IsVisible="{Binding Busy}" Height="2" Foreground="{DynamicResource AccentBrush}" />
+          <TextBlock Text="{Binding Status}" Classes="note" />
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Watching}">
+            <Ellipse Width="7" Height="7" Fill="{DynamicResource MapOpenedBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="Watching for new replays" Classes="note" />
+          </StackPanel>
+        </StackPanel>
+        <ListBox Classes="nav" ItemsSource="{Binding Nav}" SelectedItem="{Binding SelectedNav}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:NavItem">
+              <StackPanel Spacing="1">
+                <TextBlock Classes="navTitle" Text="{Binding Title}" />
+                <TextBlock Text="{Binding Sub}" Classes="note" FontSize="11.5" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+    <TransitioningContentControl Grid.Column="1" Content="{Binding CurrentPage}">
+      <TransitioningContentControl.PageTransition>
+        <CrossFade Duration="0:0:0.18" />
+      </TransitioningContentControl.PageTransition>
+    </TransitioningContentControl>
+  </Grid>
+</Window>

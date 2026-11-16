@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DropReport.App/DropReport.App.csproj" />
+    <Project Path="src/DropReport.Cli/DropReport.Cli.csproj" />
+    <Project Path="src/DropReport.GameData/DropReport.GameData.csproj" />
+    <Project Path="src/DropReport.ReplayReader/DropReport.ReplayReader.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DropReport.Tests/DropReport.Tests.csproj" />
+  </Folder>
+</Solution>

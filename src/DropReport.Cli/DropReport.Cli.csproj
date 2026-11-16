@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DropReport.ReplayReader\DropReport.ReplayReader.csproj" />
+    <ProjectReference Include="..\DropReport.GameData\DropReport.GameData.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <AssemblyName>dropreport</AssemblyName>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+</Project>
+
