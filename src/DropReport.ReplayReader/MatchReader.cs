@@ -55,6 +55,21 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     public System.Text.RegularExpressions.Regex GroupFilter { get; set; }
     private int _sinceCopy;
 
+    /// <summary>Research (CollectPaths): each chest's look the first time each field arrives (model, alt model index, loot tier, upgrade).</summary>
+    public Dictionary<uint, Dictionary<string, string>> ChestLooks { get; } = new();
+    private void NoteLook(uint? guid, TrackedChest c)
+    {
+        if (guid is not uint g) return;
+        var d = ChestLooks.TryGetValue(g, out var x) ? x : ChestLooks[g] = new() { ["class"] = c.GetType().Name, ["firstSeen"] = CurrentTimeSeconds.ToString("0.0") };
+        void Set(string k, string v) { if (v != null && !d.ContainsKey(k)) d[k] = v; }
+        Set("mesh", c.MeshRef is uint m ? (GuidPaths.GetValueOrDefault(m) ?? AllPaths.GetValueOrDefault(m) ?? $"#{m}") : null);
+        Set("searchedMesh", c.SearchedMeshRef is uint s ? (GuidPaths.GetValueOrDefault(s) ?? AllPaths.GetValueOrDefault(s) ?? $"#{s}") : null);
+        Set("altMesh", c.AltMesh != null ? $"{c.AltMesh.TotalBits}b:{Convert.ToHexString(c.AltMesh.Bytes ?? Array.Empty<byte>())}" : null);
+        Set("lootTier", c.ReplicatedLootTier != 0 ? c.ReplicatedLootTier.ToString() : null);
+        if (c.ReplicatedLootTier != 0) Set("lootTierAt", CurrentTimeSeconds.ToString("0.0"));
+        Set("upgrade", c.ChosenRandomUpgrade?.ToString());
+    }
+
     private void SnapshotGroups()
     {
         if (GroupFilter == null) return;
@@ -139,6 +154,7 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
             case BaseContainer c:
                 Chests.Update(channelIndex, guid, c.GetType().Name, (c as TrackedChest)?.SearchingPawn ?? 0, c.SearchAnimationCount,
                               c.bDestroyed, c.bAlreadySearched, CurrentTimeSeconds);
+                if (CollectPaths && c is TrackedChest tc) NoteLook(guid, tc);
                 break;
             case PlayerPawn pawn when guid is uint pg:
                 if (pawn.PlayerState is uint ps && ps != 0) PawnGuidToState[pg] = ps;   // 0 on early updates: ignore

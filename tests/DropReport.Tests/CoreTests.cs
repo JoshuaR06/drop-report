@@ -304,7 +304,8 @@ public class TreasureTests
     public void Counting_rules_change_what_rolls()
     {
         var m = M(null, new() { new("Chest", 10, 2, OpenedRefill: 1, BrokenRefill: 1), new("Extraction crate", 4, 0) }, new() { new("Rare Chest", 5, 0, 1, 0) });
-        Assert.Equal(10 - 1 + 2 - 1 + 5 - 1, Treasure.Eligible(m, CountRule.Default));              // fresh only, broken + team count; crates never
+        Assert.Equal(10 + 2 + 5, Treasure.Eligible(m, CountRule.Default));                           // refills, broken and team all count; crates never
+        Assert.Equal(10 - 1 + 2 - 1 + 5 - 1, Treasure.Eligible(m, new CountRule(Refills: false, Broken: true, Team: true)));
         Assert.Equal(12 + 5, Treasure.Eligible(m, new CountRule(Refills: true, Broken: true, Team: true)));
         Assert.Equal(10 - 1, Treasure.Eligible(m, new CountRule(Refills: false, Broken: false, Team: false)));
     }

@@ -12,8 +12,9 @@ public sealed record BoostSession(DateTime StartUtc, DateTime EndUtc, double Mul
 /// broken chests count, or whether a teammate's find shares the token, so these are the user's choice.</summary>
 public sealed record CountRule(bool Refills, bool Broken, bool Team)
 {
-    /// <summary>Default: fresh chests only (refilled ones don't roll), broken chests count, team chests count.</summary>
-    public static readonly CountRule Default = new(Refills: false, Broken: true, Team: true);
+    /// <summary>Default: everything the game's logic lets roll. Opening or breaking a chest requests a roll, and a refill
+    /// resets the chest's roll flag (B_BuildingContainerOverride_TreasureHunt), so refilled and broken chests count.</summary>
+    public static readonly CountRule Default = new(Refills: true, Broken: true, Team: true);
 }
 
 public static class Treasure
@@ -105,14 +106,15 @@ public static class Treasure
         };
     }
 
-    /// <summary>"At 10:33 a treasure-hunt chest appeared where you broke a chest." States only what the replay shows.</summary>
+    /// <summary>One sentence per reveal. The game spawns its gold treasure chest only for Major or Supreme prizes (weekly
+    /// cosmetics, Gold Outfit, Pirate Shop Access): B_TreasureHuntChestRoll clears the chest class for tier Standard (Gizmos).</summary>
     public static string Describe(TreasureReveal r, double busJump = 0)
     {
         var who = r.Who switch { "me" => "you", "teammate" => "a teammate", "other" => "another player", _ => "someone" };
         var clock = $"{(int)(r.T / 60)}:{(int)(r.T % 60):00}";
         var chest = r.Chest.ToLowerInvariant().Contains("chest") ? r.Chest.ToLowerInvariant() : "chest";
-        return $"At {clock} the game's treasure chest appeared as {who} {(r.Broken ? "broke" : "opened")} a {chest}. " +
-               (r.Prize != null ? $"Prize: {r.Prize}." : "The replay doesn't carry the prize; your post-match \"Treasures found\" screen shows whether anything was won.");
+        return $"At {clock} {who} {(r.Broken ? "broke" : "opened")} a {chest} and the game's gold treasure chest appeared. The game only shows it for a Major or Supreme prize: a weekly cosmetic, a Gold Outfit or Pirate Shop Access (Gizmo wins skip it). " +
+               (r.Prize != null ? $"Prize: {r.Prize}." : "The replay doesn't carry which prize" + (r.Broken ? ", or whether breaking the chest still granted it." : "."));
     }
 
     public static bool IsRewardChest(string type) => type != null && type.Contains("chest", StringComparison.OrdinalIgnoreCase);

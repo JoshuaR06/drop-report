@@ -19,6 +19,10 @@ public class TrackedChest : BaseContainer
     public bool bDestroyOnPlayerBuildingPlacement { get; set; }
     [NetFieldExport("ResourceType", RepLayoutCmdType.Enum)]
     public int ResourceType { get; set; }
+    // research: the chest's model, which a treasure pre-roll might swap (the library skips these fields)
+    [NetFieldExport("StaticMesh", RepLayoutCmdType.PropertyObject)] public uint? MeshRef { get; set; }
+    [NetFieldExport("SearchedMesh", RepLayoutCmdType.PropertyObject)] public uint? SearchedMeshRef { get; set; }
+    [NetFieldExport("AltMeshIdx", RepLayoutCmdType.Property)] public DebuggingObject AltMesh { get; set; }
 }
 
 [NetFieldExportGroup("/Game/Building/ActorBlueprints/Containers/AlwaysSpawn_NormalChest.AlwaysSpawn_NormalChest_C", minimalParseMode: ParseMode.Debug)]

@@ -58,7 +58,7 @@ public sealed class Settings
     public bool HideNames { get; set; }
     public string Theme { get; set; } = "Dark";
     // Treasure Hunt counting rules (nobody outside Epic knows these for sure; the user picks)
-    public bool CountRefills { get; set; }
+    public bool CountRefills { get; set; } = true;
     public bool CountBroken { get; set; } = true;
     public bool CountTeam { get; set; } = true;
     public bool SetupDone { get; set; }

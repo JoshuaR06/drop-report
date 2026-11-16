@@ -168,7 +168,7 @@ public static class Insights
     {
         var r = new List<string>();
         foreach (var t in (m.Reveals ?? new()).Where(x => x.Who is "me" or "teammate"))
-            r.Add(t.Prize != null ? $"Treasure: {t.Prize}" : t.Who == "me" ? (t.Broken ? "Treasure chest! (you broke it)" : "Treasure chest!") : "Your team found a treasure chest");
+            r.Add(t.Prize != null ? $"Treasure: {t.Prize}" : t.Who == "me" ? (t.Broken ? "Gold treasure chest! (you broke it)" : "Gold treasure chest!") : "Your team found a gold treasure chest");
         r.AddRange(Records(m, all));
         return r;
     }

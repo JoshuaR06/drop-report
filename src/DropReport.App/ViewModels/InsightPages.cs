@@ -66,10 +66,12 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
     /// <summary>Every claim on this page, with where it comes from.</summary>
     public List<CountLine> Certainty { get; } = new()
     {
-        new("Confirmed in the game files", "Uncommon", "The prizes and their tiers, the weekly rotation (Sunday 14:00 UTC), the end of the hunt (5 Dec 14:00 UTC), which chests can hold a treasure, and that gizmo prizes are gizmo-wheel account items.", ""),
-        new("Published by Epic", "Rare", "The per-chest odds and the 7 Nov Treasure Hours boosts (Fortnite Status). Later Treasure Hours are as reported, not confirmed.", ""),
-        new("Seen in your replays", "Epic", "Chests you and your team opened or broke, refills, and treasure chests appearing (\"treasure reveals\").", ""),
-        new("Not knowable from your PC", "Legendary", "What a roll won (granted on Epic's servers), whether a broken or refilled chest can win, whether a teammate's prize reaches you, and where a given gizmo came from: gizmos also come from vending machines, quests and chest loot. Your post-match \"Treasures found\" screen is the record.", ""),
+        new("Certain: the game's own logic", "Uncommon", "A prize roll happens when a chest is opened or broken, for the player who did it (breaking needs \"eligible\" damage, which Epic's server defines). A refill resets the chest so it can roll again. The gold treasure chest only appears for Major or Supreme prizes; Gizmo wins skip it.", ""),
+        new("Certain: game files and Epic's live config", "Uncommon", "The prizes and their tiers, the weekly rotation (Sunday 14:00 UTC), the end of the hunt (5 Dec 14:00 UTC), which chests can hold a treasure, and that Gizmo prizes map to gizmo-wheel account items.", ""),
+        new("Published by Epic", "Rare", "The per-chest odds and the 7 Nov Treasure Hours boosts (Fortnite Status and Epic's help page). Later Treasure Hours are as reported, not confirmed.", ""),
+        new("Seen in your replays", "Epic", "Chests you and your team opened or broke, refills, and every gold treasure chest that appeared.", ""),
+        new("Reported, not confirmed by Epic", "Epic", "That your whole squad can win when a teammate rolls a prize (in-game event text posted by leakers), and how Ranked is treated (conflicting reports).", ""),
+        new("Not knowable from your PC", "Legendary", "What a roll granted (decided on Epic's servers), whether a broken treasure chest still pays out, and where a given Gizmo came from (Gizmos also come from quests and Sprite Mastery). Your post-match \"Treasures found\" screen and your locker are the record.", ""),
     };
 
     public double PerChest => 1 / Treasure.Rewards[0].OneIn;

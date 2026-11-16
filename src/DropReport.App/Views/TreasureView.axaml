@@ -97,14 +97,14 @@
       <!-- counting rules -->
       <Label Classes="section" Content="WHAT COUNTS" />
       <TextBlock Classes="dek" MaxWidth="860" HorizontalAlignment="Left" Margin="0,0,0,10"
-                 Text="Epic hasn't said whether refilled or broken chests roll for rewards, or whether a teammate's token reaches the whole squad. Pick what you believe; every number on this page follows." />
+                 Text="The game's own logic rolls a prize when a chest is opened or broken, and lets a refilled chest roll again, so all three are on by default. Epic hasn't confirmed squad sharing. Every number on this page follows these switches." />
       <WrapPanel>
         <ToggleSwitch IsChecked="{Binding CountRefills}" OnContent="Refilled chests count" OffContent="Refilled chests don't count" Margin="0,0,36,0" />
         <ToggleSwitch IsChecked="{Binding CountBroken}" OnContent="Broken chests count" OffContent="Broken chests don't count" Margin="0,0,36,0" />
         <ToggleSwitch IsChecked="{Binding CountTeam}" OnContent="Teammates' chests count" OffContent="Only my chests count" />
       </WrapPanel>
       <TextBlock Classes="note" Margin="0,6,0,0" MaxWidth="860" HorizontalAlignment="Left"
-                 Text="Refilled = a chest searched earlier in the same match (chests refill over time since v43.00). Only chests roll: extraction crates and ammo boxes never count. Teammates out of your sight aren't in your replay, so team counts are a minimum." />
+                 Text="Refilled = a chest searched earlier in the same match (chests refill over time since v43.00). Only the chest kinds on the game's treasure list roll: extraction crates and ammo boxes never do. Teammates out of your sight aren't in your replay, so team counts are a minimum." />
 
       <!-- treasure reveals in your matches -->
       <Label Classes="section" Content="TREASURE REVEALS IN YOUR MATCHES" />

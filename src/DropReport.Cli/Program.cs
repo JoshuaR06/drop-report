@@ -35,6 +35,93 @@ if (args.Length >= 2 && args[0] == "players")
                           $"streamerName='{p.StreamerModeName}' override='{p.PlayerNameCustomOverride}' platform={p.Platform} botId={(p.BotId != null ? "yes" : "")} owner={p.IsReplayOwner}");
     return 0;
 }
+if (args.Length >= 3 && args[0] == "chest-looks")
+{
+    var rs = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= DateTime.Parse(args[2])).OrderBy(f => f).ToList();
+    var dist = new Dictionary<string, Dictionary<string, int>>();
+    var flagged = new List<string>();
+    var tierRows = new List<string>(); int tierBefore = 0, tierAfter = 0, tierNever = 0, ownTier = 0; var ownRows = new List<string>();
+    int chests = 0;
+    foreach (var f in rs)
+    {
+        var r = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
+        try { r.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
+        foreach (var (g, look) in r.ChestLooks)
+        {
+            chests++;
+            foreach (var k in new[] { "mesh", "searchedMesh", "altMesh", "lootTier", "upgrade" })
+            {
+                var key = $"{look["class"]}.{k}";
+                var v = look.GetValueOrDefault(k) ?? "(never sent)";
+                v = v.Contains('/') ? v[(v.LastIndexOf('/') + 1)..] : v;
+                (dist.TryGetValue(key, out var dd) ? dd : dist[key] = new())[v] = dd?.GetValueOrDefault(v) + 1 ?? 1;
+            }
+        }
+        foreach (var (g, look) in r.ChestLooks.Where(x => x.Value.GetValueOrDefault("lootTier") == "2" && x.Value["class"] is "TrackedChest" or "AlwaysSpawnNormalChest" or "BuriedChest"))
+        {
+            var at = float.Parse(look["lootTierAt"]);
+            var first = r.Chests.Events.Where(e => e.Guid == g && e.Kind != "carried").OrderBy(e => e.T).FirstOrDefault();
+            var mineP = r.PawnGuidToState.Where(kv => kv.Value == r.RecorderState).Select(kv => kv.Key).ToHashSet();
+            r.StateTeam.TryGetValue(r.RecorderState ?? 0, out var myT);
+            string WhoP(uint pw) => mineP.Contains(pw) ? "me" : r.PawnGuidToState.TryGetValue(pw, out var st) && st is uint s2 && r.StateTeam.TryGetValue(s2, out var tm) && tm == myT ? "teammate" : "other";
+            if (first != null && WhoP(first.Pawn) != "other")
+            {
+                ownTier++;
+                var revealNear = r.PrizeUpdates.Any(x => Math.Abs(x.T - first.T) <= 3);
+                ownRows.Add($"{Path.GetFileNameWithoutExtension(f)[14..]} chest {g}: {WhoP(first.Pawn)} {first.Kind} at {first.T:0.0}s (tier known {at:0.0}s) -> reveal: {(revealNear ? "YES" : "no")}");
+            }
+            if (first == null) tierNever++; else if (at < first.T - 0.5f) tierBefore++; else tierAfter++;
+            tierRows.Add($"{Path.GetFileNameWithoutExtension(f)[14..]} chest {g} seen {look["firstSeen"]}s tier@{at:0.0}s first search {(first == null ? "none" : $"{first.T:0.0}s ({first.Kind})")}");
+        }
+        // the chest searched/broken closest to each treasure reveal
+        foreach (var rv in r.PrizeUpdates.GroupBy(x => x.Actor))
+        {
+            var t0 = rv.Min(x => x.T);
+            var near = r.Chests.Events.Where(e => e.Guid != null && Math.Abs(e.T - t0) <= 2).OrderBy(e => Math.Abs(e.T - t0)).FirstOrDefault();
+            if (near?.Guid is uint ng && r.ChestLooks.TryGetValue(ng, out var lk))
+                flagged.Add($"{Path.GetFileNameWithoutExtension(f)} reveal {t0:0.0}s <- chest {ng} {near.Kind}: " + string.Join("  ", lk.Select(kv => $"{kv.Key}={(kv.Value.Contains('/') ? kv.Value[(kv.Value.LastIndexOf('/') + 1)..] : kv.Value)}")));
+        }
+        Console.Error.Write(".");
+    }
+    Console.WriteLine($"\n{rs.Count} replays, {chests} chests seen");
+    foreach (var kv in dist.OrderBy(k => k.Key))
+    {
+        Console.WriteLine($"{kv.Key}:");
+        foreach (var v in kv.Value.OrderByDescending(x => x.Value).Take(12)) Console.WriteLine($"   {v.Value,6}  {v.Key}");
+    }
+    Console.WriteLine("--- loot tier 2 on regular chests: when it arrived vs the first search");
+    foreach (var s in tierRows.Take(40)) Console.WriteLine("  " + s);
+    Console.WriteLine($"  summary: {tierRows.Count} chests; tier known before any search: {tierBefore}; at/after a search: {tierAfter}; never searched: {tierNever}");
+    Console.WriteLine($"--- tier-2 chests opened or broken by you or your team: {ownTier}");
+    foreach (var s in ownRows) Console.WriteLine("  " + s);
+    Console.WriteLine("--- the chest at each treasure reveal:");
+    foreach (var s in flagged) Console.WriteLine("  " + s);
+    return 0;
+}
+if (args.Length >= 1 && args[0] == "base-container")
+{
+    foreach (var pr in typeof(FortniteReplayReader.Models.NetFieldExports.Items.BaseContainer).GetProperties())
+    {
+        var at = pr.GetCustomAttributes(true).FirstOrDefault(a => a.GetType().Name == "NetFieldExportAttribute");
+        Console.WriteLine($"{pr.Name,-32} {pr.PropertyType.Name,-20} {(at == null ? "" : string.Join(" ", at.GetType().GetProperties().Select(x => $"{x.Name}={x.GetValue(at)}")))}");
+    }
+    return 0;
+}
+if (args.Length >= 4 && args[0] == "fields")
+{
+    // research: the replicated fields of every networked class matching a regex: fields <folder> <since> <regex>
+    var rs = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= DateTime.Parse(args[2])).OrderBy(f => f).Take(5).ToList();
+    var all = new Dictionary<string, HashSet<string>>();
+    foreach (var f in rs)
+    {
+        var r = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance)
+            { CollectPaths = true, GroupFilter = new System.Text.RegularExpressions.Regex(args[3], System.Text.RegularExpressions.RegexOptions.IgnoreCase) };
+        try { r.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
+        foreach (var g in r.GroupFields) { var s = all.TryGetValue(g.Key, out var x) ? x : all[g.Key] = new(); s.UnionWith(g.Value); }
+    }
+    foreach (var kv in all.OrderBy(k => k.Key)) Console.WriteLine($"{kv.Key}\n    {string.Join(", ", kv.Value.OrderBy(x => x))}");
+    return 0;
+}
 if (args.Length >= 3 && args[0] == "gizmos")
 {
     // research: every gizmo the replay owner held (granted gizmos never show as pickups), where it came from,
