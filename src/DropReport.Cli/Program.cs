@@ -47,6 +47,8 @@ if (args.Length >= 3 && args[0] == "gizmos")
         var r = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
         try { r.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
         var mine = r.PawnGuidToState.Where(kv => kv.Value == r.RecorderState).Select(kv => kv.Key).ToHashSet();
+        r.StateTeam.TryGetValue(r.RecorderState ?? 0, out var myTeam);
+        string Team(uint pawn) => mine.Contains(pawn) ? "me" : r.PawnGuidToState.TryGetValue(pawn, out var st) && st is uint s && r.StateTeam.TryGetValue(s, out var tm) && tm == myTeam ? "teammate" : null;
         var held = r.PawnWeapons.Where(kv => mine.Contains(kv.Key)).SelectMany(kv => kv.Value)
             .Select(w => (w.t, w.weapon, cls: r.ActorClass.GetValueOrDefault(w.weapon) ?? r.AllPaths.GetValueOrDefault(w.weapon) ?? "?"))
             .Where(w => gz.IsMatch(w.cls)).GroupBy(w => w.weapon).Select(g => g.OrderBy(x => x.t).First()).OrderBy(w => w.t).ToList();
@@ -59,8 +61,8 @@ if (args.Length >= 3 && args[0] == "gizmos")
         {
             var fromPickup = picked.Any(pk => pk.PickedAt <= h.t + 1);
             Console.WriteLine($"   held {h.cls.Split('/').Last()} first at {h.t:0.0}s  -> {(fromPickup ? "after a pickup" : "NOT picked up: granted")}");
-            foreach (var e in r.Chests.Events.Where(e => mine.Contains(e.Pawn) && e.T <= h.t && e.T >= h.t - 90).OrderByDescending(e => e.T).Take(3))
-                Console.WriteLine($"        my chest before it: {e.Chest} {e.Kind} at {e.T:0.0}s ({h.t - e.T:0.0}s earlier)");
+            foreach (var e in r.Chests.Events.Where(e => Team(e.Pawn) != null && e.Kind != "carried" && e.T <= h.t && e.T >= h.t - 240).OrderByDescending(e => e.T).Take(8))
+                Console.WriteLine($"        {Team(e.Pawn),-8} {DropReport.Rules.ChestLabel(e.Chest),-22} {e.Kind,-7} at {e.T,6:0.0}s ({h.t - e.T,5:0.0}s earlier)");
         }
         var rev = r.PrizeUpdates.Select(x => x.Actor).Distinct().Count();
         if (rev > 0) Console.WriteLine($"   treasure reveals in this match: {rev}");
