@@ -162,8 +162,21 @@ n=700), always-spawn chests median 90 s (n=341), Rare chests median 92 s (n=113)
 fixed timer. The client only hears about chests near the player, so a reset can arrive late: these are upper bounds.
 A chest can only roll again once it has refilled; an already-searched chest doesn't roll when opened or broken.
 
+**Certain: when a match earned something.** The post-match "Treasures Found" screen is only added when the player's
+prizes for the match aren't empty (`BP_DelilahTreasureHunt_UIDirectorComponent.HasFoundAnyTreasure` ->
+`B_PlayerController_TreasureHuntMatchDataComponent.GetAllPrizesEarnedThisMatch`, filled by `PrizeEarned` events). Fortnite's
+log writes `Adding scene: UIScene_DelilahTreasureHunt_TreasuresFound_PostMatch` when it does. So that line means at least
+one prize was earned that match; it doesn't say which. Its absence proves nothing if the post-match tabs were skipped.
+Seen in the owner's log (12-15 Nov, 46 season-43 matches, each line within about a minute of a replay's end): 12 matches
+earned something, 10 of 26 squad matches, 1 of 10 solo, 1 of 9 duo, including the match with the gold treasure chest.
+The squad-heavy split fits the reported squad sharing, but doesn't prove it.
+
+**Before a match: nothing.** Nothing the client receives says whether a match holds the token or any prize (see the
+pre-roll section), and no chest looks different.
+
 **Not knowable from the PC:** what a roll granted, whether a broken treasure chest still pays out, what "eligible damage"
-is, and where a given Gizmo came from. Fortnite's local log doesn't record grants or treasure-quest progress. The record is
+is, and where a given Gizmo came from. Apart from the screen line above, Fortnite's local log doesn't record grants or
+treasure-quest progress. The record is
 the game's UI: the post-match "Treasures found" screen, the locker and gizmo wheel, the treasure-hunt quests.
 
 Research tools: `dropreport scan-rewards`, `scan-paths`, `fields`, `chest-looks`, `gizmos` (CLI); the game-file reader in
