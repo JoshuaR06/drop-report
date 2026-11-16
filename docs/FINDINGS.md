@@ -95,7 +95,9 @@ in chests...", patch notes v43.00 / v43.10); **datamine** (Llamalaxy on X, 7 and
 **reported** (in-game event text posted by @FNBRunderground, 1 Nov 2026; guides).
 
 **Certain: the game's logic** (`B_BuildingContainerOverride_TreasureHunt`, a component on every eligible chest)
-- Opening: when a player searches the chest, the server calls `RequestPrizeRoll(player, false)` and sets `RollRequested`.
+- Opening: when a player starts to search the chest (`BlueprintServerOnAttemptInteract`), the server calls
+  `RequestPrizeRoll(player, false)` and sets `RollRequested`. The chest's own search only goes ahead once the roll comes
+  back (`OnPrizeRollComplete` -> `OwnerServerAttemptInteract`), so every prize is rolled before the chest opens.
 - Breaking: when the chest is destroyed and it is not searched, not already rolled, and `IsDamageSourceEligible(cause)`
   (native code; what counts as eligible isn't in the blueprint), the server calls `RequestPrizeRoll(instigating player,
   true)`. So breaking rolls too; what the server does with the `true` (destruction) flag isn't visible. Datamine agrees
@@ -116,6 +118,24 @@ in chests...", patch notes v43.00 / v43.10); **datamine** (Llamalaxy on X, 7 and
   Jam Track, Loading Screen, Gold Car Decal (Major; rows 14-33 look like later weeks' rotations, by numbering only);
   Sprite Gizmos (Standard). Cosmetics and the token are account quests (`Quest_DPID_ItemN`). The weekly prize list in
   the frontend table is placeholder text; the real weekly pools are on Epic's server.
+- Pre-roll mode: every prize row has `PreRollMode`, a setting with exactly two values (`EDelilahTreasureHuntPreRollMode`:
+  `PreRollOnly` = 0, `AttemptPreRoll` = 1). Pirate Shop Access is the only `PreRollOnly` prize; the other 30 rows are
+  `AttemptPreRoll`, and the live config doesn't change any of them (it only changes tiers and icons). Pirate Shop Access
+  is also the only prize with a per-match cap (1), its own granter (`DelilahTreasureHuntCloverRewardGrant`) and a GUID id.
+- Pre-roll on the server (native type definitions, from the mappings file): a prize request carries a `bPreRoll` flag
+  (`DelilahTreasureHuntLocalPrizeRequest`); the server keeps `ForcedPrizeIds`, `RolledPrizeDefinitions` and
+  `CurrentMatchRolledAmounts`; every treasure chest component has a `ForcedRewardId`; prize pools fetched from Epic's
+  backend list each prize's `StartingInventory` and `RemainingInventory`. What the server does with these is compiled
+  code, not in the readable game data.
+- None of it reaches players: in replays the treasure controller on the game state carries no fields, and the chest's
+  treasure component isn't replicated, so no replay can show a pre-rolled or forced prize.
+- Not known: what "pre-roll" means in practice (when it happens, whether it pins a prize to a chest, whether refilled or
+  broken chests can receive a pre-rolled prize). It can't be the per-chest roll itself, since every prize is rolled
+  before its chest opens. The names fit a prize reserved ahead of time from Epic's limited stock (`AttemptPreRoll` = use
+  a reserved one if there is one, otherwise roll at the chest; `PreRollOnly` = reserved only), but that is a reading of
+  names, not a finding. Datamine agrees on the setting (Llamalaxy, reported by TheGamer 7 Nov 2026) and says it doesn't
+  prove a token is assigned to a chest at match start. Epic declined to explain the odds ("everyone has an equal
+  opportunity", per TheGamer).
 - Gizmo prizes map to gizmo-wheel ("MorningBell") account entitlements (`DelilahTreasureHuntSharedGame.ini`: prizes 9-13
   -> `/MorningBell/Delilah/Item00-04`). In-game names: Extraction Accelerator, Portable Extractor, Golden Firework,
   Sprite Locator, Lucky Locator. Gizmos also come from Sprite Mastery and quests (Epic, v43.00). The loot tables still
