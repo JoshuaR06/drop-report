@@ -73,7 +73,10 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
         Title = entry.Headline;
         Subtitle = $"{entry.Kicker} · {m.Minutes:0} MIN · GAME V{m.Season}";
         Dek = entry.Dek;
-        if (m.Reveals is { Count: > 0 } rv) TreasureNote = string.Join("  ", rv.Select(x => Treasure.Describe(x)));
+        var notes = new List<string>();
+        if (m.TreasureEarned == true) notes.Add("You earned at least one treasure: Fortnite showed its \"Treasures Found\" screen after this match. Its log doesn't say which one; your locker and gizmo wheel do.");
+        if (m.Reveals is { Count: > 0 } rv) notes.AddRange(rv.Select(x => Treasure.Describe(x)));
+        if (notes.Count > 0) TreasureNote = string.Join("  ", notes);
         if (m.Epic.Elims is int epic && epic != m.Fights.Elims)
             ElimCheck = $"Epic counted {epic} eliminations; the replay's elimination events credit you with {m.Fights.Elims}. Totals use Epic's number, so the per-weapon split below may be off by {Math.Abs(epic - m.Fights.Elims)}.";
         Duration = Map?.End ?? m.Minutes * 60;

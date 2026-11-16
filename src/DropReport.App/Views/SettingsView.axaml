@@ -77,6 +77,8 @@
         <ToggleSwitch IsChecked="{Binding LightTheme}" OnContent="Light theme" OffContent="Dark theme" />
         <ToggleSwitch IsChecked="{Binding HideNames}" OnContent="Hide other players' names" OffContent="Show other players' names" />
         <TextBlock Classes="note" Text="Everything stays on this PC. No account, no telemetry. Hiding names is handy for screenshots and streams." />
+        <ToggleSwitch IsChecked="{Binding ReadGameLog}" OnContent="Check Fortnite&apos;s log for treasures earned" OffContent="Don&apos;t read Fortnite&apos;s log" Margin="0,6,0,0" />
+        <TextBlock Classes="note" Text="After a match (never during one), Drop Report looks for the line Fortnite writes when it shows its &quot;Treasures Found&quot; screen, and keeps only its time. The log also holds player names; those are never read into the app." />
         <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
           <TextBlock Text="{Binding DataFolder}" Classes="sub" VerticalAlignment="Center" />
           <Button Grid.Column="1" Classes="ghost" Content="Open data folder" Command="{Binding OpenDataFolderCommand}" />

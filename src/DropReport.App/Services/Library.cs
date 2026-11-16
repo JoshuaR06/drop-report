@@ -14,6 +14,7 @@ public sealed class Library
     private readonly SemaphoreSlim _gate = new(1, 1);
     public ItemTable Names { get; private set; } = ItemTable.Empty;
     public List<MatchSummary> Matches { get; private set; } = new();
+    public TreasureLog TreasureLog { get; private set; } = LoadTreasureLog();
     public event Action Changed;
 
     public Library(Settings settings) { _settings = settings; ReloadNames(); }
@@ -25,7 +26,8 @@ public sealed class Library
         var list = new List<MatchSummary>();
         foreach (var f in Directory.GetFiles(AppData.Matches, "*.summary.json"))
             try { var s = JsonSerializer.Deserialize<MatchSummary>(File.ReadAllText(f), Json.Options); if (s != null) list.Add(s); } catch { }
-        Matches = list.OrderByDescending(m => m.Start ?? DateTime.MinValue).ToList();
+        var tl = _settings.ReadGameLog ? TreasureLog : null;
+        Matches = list.Select(m => tl == null ? m : m with { TreasureEarned = tl.Earned(m) }).OrderByDescending(m => m.Start ?? DateTime.MinValue).ToList();
         Changed?.Invoke();
     }
 
@@ -105,7 +107,27 @@ public sealed class Library
             }
         }
         if (analyzed + failed > 0) AppData.Log($"analyzed {analyzed}, failed {failed}");
+        ReadGameLogs();
         return new ScanResult(archived, analyzed, failed, false);
+    }
+
+    private static TreasureLog LoadTreasureLog()
+    {
+        try { if (File.Exists(AppData.TreasureLogFile)) return JsonSerializer.Deserialize<TreasureLog>(File.ReadAllText(AppData.TreasureLogFile)) ?? new(); } catch { }
+        return new();
+    }
+
+    /// <summary>Fortnite's log: which matches showed the Treasures Found screen. Only between matches (never during one),
+    /// and only the marker's time is kept (the log also holds Epic names, which are never read into the app).</summary>
+    private void ReadGameLogs()
+    {
+        if (!_settings.ReadGameLog || !Directory.Exists(AppData.FortniteLogs) || MatchInProgress()) return;
+        var changed = false;
+        foreach (var f in Directory.GetFiles(AppData.FortniteLogs, "FortniteGame*.log"))
+            try { changed |= TreasureLog.AddFile(f); } catch (Exception e) { AppData.Log($"game log not read {Path.GetFileName(f)}: {e.Message}"); }
+        if (!changed) return;
+        try { File.WriteAllText(AppData.TreasureLogFile, JsonSerializer.Serialize(TreasureLog)); } catch { }
+        AppData.Log($"game log: {TreasureLog.Screens.Count} treasure screens on record");
     }
 
     private static Task<T> RunLowPriority<T>(Func<T> work)

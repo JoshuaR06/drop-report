@@ -19,8 +19,10 @@ Free and open source. Windows. Reads your own replay files; nothing leaves your 
   of the season, personal records, and the one or two things to work on.
 - **Treasure Hunt (season 43).** Your chance of having rolled the Pirate Shop token, from Epic's published per-chest
   odds; where your pace takes you by the season's end; chests needed for a 10/25/50% chance; Treasure Hours boosts; and
-  the odds of the six other chest rewards. Nobody outside Epic knows whether refilled or broken chests roll, or whether
-  a teammate's token reaches the squad, so those are switches: every number follows what you pick.
+  the odds of the six other chest rewards; and which matches earned you a treasure (Fortnite only shows its post-match
+  "Treasures Found" screen when you earned one). The game's own logic rolls refilled and broken chests too; how the token's
+  "pre-roll only" setting plays out isn't public, so what counts is a set of switches: every number follows what you pick.
+  Details and sources: [docs/FINDINGS.md](docs/FINDINGS.md).
 - **Weapons: what you're actually best with.** Most eliminations, most damage a match, best headshot rate, up close vs
   at range, against real players. Rankings need a minimum sample, so one lucky match can't top a list.
 - **Drop spots.** Where you touched down every match, scored on placement, fights and loot, with the picks on a map.
@@ -41,9 +43,10 @@ Free and open source. Windows. Reads your own replay files; nothing leaves your 
 
 ## Safe by design
 
-- **Reads files only.** Drop Report reads finished `.replay` files and, for item names, the game's own data files on
-  disk. It never reads game memory, never injects anything and never touches the running game, which is what
-  anti-cheat looks for.
+- **Reads files only, after the match.** Drop Report reads finished `.replay` files, the game's own data files on disk
+  (for item names), and, between matches, one line of Fortnite's log: the one written when the "Treasures Found" screen
+  shows (only its time is kept; a switch in Settings turns it off). It never reads game memory, never injects anything,
+  never touches the running game, which is what anti-cheat looks for, and never reads anything during a match.
 - **Won't slow your game.** It reads replays at low priority and never while a match is being recorded. No admin
   rights. Starting with Windows is your choice (setup asks; Settings turns it off).
 - **Private.** No account, no telemetry, no cloud. Your data stays in `%LOCALAPPDATA%\DropReport`. The only things it

@@ -20,6 +20,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _postMatchPopup;
     [ObservableProperty] private bool _checkForUpdates;
     [ObservableProperty] private bool _onlineOdds;
+    [ObservableProperty] private bool _readGameLog;
     public string AutostartNote => Autostart.CanRegister ? "Starts quietly in the tray when you sign in to Windows. Turn off any time."
         : "This is a development build, which can't start with Windows. The installed app can.";
     [ObservableProperty] private string _message = "";
@@ -32,7 +33,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _main = main;
         _replayFolder = S.ReplayFolder; _watchWhileOpen = S.WatchWhileOpen; _hideNames = S.HideNames; _lightTheme = S.Theme == "Light";
         _startWithWindows = S.StartWithWindows && Autostart.IsOn; _closeToTray = S.CloseToTray; _postMatchPopup = S.PostMatchPopup;
-        _checkForUpdates = S.CheckForUpdates; _onlineOdds = S.OnlineOdds;
+        _checkForUpdates = S.CheckForUpdates; _onlineOdds = S.OnlineOdds; _readGameLog = S.ReadGameLog;
         ExtraFolders = new(S.ExtraFolders);
     }
 
@@ -44,6 +45,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     partial void OnPostMatchPopupChanged(bool value) { S.PostMatchPopup = value; S.Save(); }
     partial void OnCheckForUpdatesChanged(bool value) { S.CheckForUpdates = value; S.Save(); }
     partial void OnOnlineOddsChanged(bool value) { S.OnlineOdds = value; S.Save(); }
+    partial void OnReadGameLogChanged(bool value) { S.ReadGameLog = value; S.Save(); _main.Library.LoadSummaries(); }
     partial void OnLightThemeChanged(bool value) { S.Theme = value ? "Light" : "Dark"; S.Save(); App.SetTheme(S.Theme); }
 
     public void AddExtraFolder(string path)

@@ -344,6 +344,30 @@ public class TreasureTests
     }
 
     [Fact]
+    public void Treasure_log_marks_the_match_the_screen_followed()
+    {
+        var log = new TreasureLog();
+        log.Add(new[]
+        {
+            "Log file open, 11/14/26 12:00:00",                                                     // no stamp: ignored
+            "[2026.11.14-17.00.00:000][  0]LogInit: start",
+            "[2026.11.14-17.48.19:009][123]LogDynamicUI: Adding scene: UIScene_DelilahTreasureHunt_TreasuresFound_PostMatch [FortLocalPlayer_0]",
+            "[2026.11.14-17.48.40:000][124]LogDynamicUI: Removing scene: UIScene_DelilahTreasureHunt_TreasuresFound_PostMatch [FortLocalPlayer_0]",
+            "[2026.11.14-19.30.00:000][900]LogExit: bye",
+        });
+        Assert.Single(log.Screens);                                                                  // only the marker line is kept
+        var utc = new DateTime(2026, 11, 14, 17, 36, 0, DateTimeKind.Utc);
+        Assert.True(log.Earned(M(utc, new(), new()) with { Minutes = 12.7 }));                       // ends 17:48:42, screen 23 s before
+        Assert.False(log.Earned(M(utc.AddMinutes(20), new(), new()) with { Minutes = 15 }));         // covered by the log, no screen
+        Assert.Null(log.Earned(M(utc.AddHours(5), new(), new())));                                   // after the log ends: unknown
+        Assert.True(log.Earned(M(utc.ToLocalTime(), new(), new()) with { Minutes = 12.7 }));         // local start times work too
+
+        log.Add(new[] { "[2026.11.14-17.00.00:000][  0]LogInit: start", "[2026.11.14-17.48.19:009][123]LogDynamicUI: Adding scene: UIScene_DelilahTreasureHunt_TreasuresFound_PostMatch" });
+        Assert.Single(log.Screens);                                                                  // the same log again: no duplicates
+        Assert.Single(log.Covered);
+    }
+
+    [Fact]
     public void Spots_need_enough_drops_to_rank()
     {
         var ms = new List<MatchSummary>

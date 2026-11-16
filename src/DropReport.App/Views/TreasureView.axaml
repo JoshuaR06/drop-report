@@ -106,6 +106,24 @@
       <TextBlock Classes="note" Margin="0,6,0,0" MaxWidth="860" HorizontalAlignment="Left"
                  Text="Refilled = a chest searched earlier in the same match (chests refill over time since v43.00). Only the chest kinds on the game's treasure list roll: extraction crates and ammo boxes never do. Teammates out of your sight aren't in your replay, so team counts are a minimum." />
 
+      <!-- matches that earned a treasure (Fortnite's log) -->
+      <Label Classes="section" Content="MATCHES THAT EARNED TREASURE" />
+      <TextBlock Classes="dek" Text="{Binding EarnedNote}" MaxWidth="860" HorizontalAlignment="Left" Margin="0,0,0,8" />
+      <ItemsControl ItemsSource="{Binding Earned}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:CountLine">
+            <Border Classes="rowline">
+              <Grid ColumnDefinitions="Auto,240,*,80">
+                <Border Classes="rarity" Background="{Binding Rarity, Converter={x:Static vm:RarityOrAccentConverter.Instance}}" />
+                <TextBlock Grid.Column="1" Text="{Binding Name}" Classes="rowname" FontSize="17" />
+                <TextBlock Grid.Column="2" Text="{Binding Note}" Classes="sub" TextWrapping="Wrap" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding Count}" Classes="kicker" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
       <!-- treasure reveals in your matches -->
       <Label Classes="section" Content="TREASURE REVEALS IN YOUR MATCHES" />
       <TextBlock Classes="dek" Text="{Binding RevealsNote}" MaxWidth="860" HorizontalAlignment="Left" Margin="0,0,0,8" />
