@@ -75,5 +75,19 @@ public static class Rules
         try { return new DateTime(G(1), G(2), G(3), G(4), G(5), G(6), DateTimeKind.Local); } catch { return null; }
     }
 
+    /// <summary>Who someone is: bots carry a BotId; NPC characters (bosses like Buggy) are bots without one.</summary>
+    public static string Kind(bool isBot, string botId) => !isBot ? "player" : string.IsNullOrEmpty(botId) ? "npc" : "bot";
+
+    /// <summary>
+    /// The name to show. Players in anonymous mode chose to hide their name, and the replay carries no anonymous tag for
+    /// them (checked over 677 players), so they show as "Anonymous player" rather than the account name the replay leaks.
+    /// </summary>
+    public static string DisplayName(string name, bool isBot, bool? anonymous, string streamerName, string nameOverride, string botId)
+    {
+        if (!isBot && anonymous == true) return string.IsNullOrWhiteSpace(streamerName) ? "Anonymous player" : streamerName;
+        if (!string.IsNullOrWhiteSpace(streamerName)) return streamerName;
+        return !string.IsNullOrWhiteSpace(name) ? name : !string.IsNullOrWhiteSpace(nameOverride) ? nameOverride : botId ?? "?";
+    }
+
     public static string StripRarity(string label) => Regex.Replace(label ?? "", @"\s*\[\w+\]$", "");
 }

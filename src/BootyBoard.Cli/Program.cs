@@ -17,6 +17,24 @@ if (args.Length >= 1 && args[0] == "gamedata")
     Console.WriteLine($"{n} items -> {b.ItemTablePath}");
     return 0;
 }
+if (args.Length >= 2 && args[0] == "mapinfo")
+{
+    var rep = new BootyBoard.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance).ReadReplay(args[1]);
+    var md = rep.MapData;
+    Console.WriteLine($"map info: {rep.GameData?.MapInfo}  playlist {rep.GameData?.CurrentPlaylist}");
+    Console.WriteLine($"levels: {string.Join(", ", rep.GameData?.AdditionalPlaylistLevels ?? Array.Empty<string>())}");
+    Console.WriteLine($"grid start {md?.WorldGridStart?.X},{md?.WorldGridStart?.Y}  end {md?.WorldGridEnd?.X},{md?.WorldGridEnd?.Y}  spacing {md?.WorldGridSpacing?.X},{md?.WorldGridSpacing?.Y}  total {md?.WorldGridTotalSize?.X},{md?.WorldGridTotalSize?.Y}");
+    return 0;
+}
+if (args.Length >= 2 && args[0] == "players")
+{
+    // name fields per player (debugging names, bots, anonymous/streamer mode)
+    var rep = new BootyBoard.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance).ReadReplay(args[1]);
+    foreach (var p in rep.PlayerData.OrderBy(p => p.IsBot).ThenBy(p => p.TeamIndex))
+        Console.WriteLine($"bot={p.IsBot,-5} team={p.TeamIndex,-3} name='{p.PlayerName}' anon={p.IsUsingAnonymousMode} streamer={p.IsUsingStreamerMode} " +
+                          $"streamerName='{p.StreamerModeName}' override='{p.PlayerNameCustomOverride}' platform={p.Platform} botId={(p.BotId != null ? "yes" : "")} owner={p.IsReplayOwner}");
+    return 0;
+}
 if (args.Length < 2 || args[0] != "analyze")
 {
     Console.WriteLine("usage: bootyboard analyze <replay file or folder> [--out <dir>] [--names <itemnames.json>] [--max N]\n       bootyboard gamedata");

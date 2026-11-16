@@ -95,8 +95,10 @@ public static class MatchAnalyzer
         // ---- knocks vs elims + deaths
         var pdById = (replay.PlayerData ?? new List<PlayerData>()).Where(p => p.PlayerId != null).GroupBy(p => p.PlayerId).ToDictionary(g => g.Key, g => g.First());
         var mateIds = pdById.Values.Where(p => !p.IsReplayOwner && p.TeamIndex != null && p.TeamIndex == me?.TeamIndex).Select(p => p.PlayerId).ToHashSet();
-        string WhoId(string id) => id == null ? "?" : id == me?.PlayerId ? "me" : mateIds.Contains(id) ? "teammate" : pdById.TryGetValue(id, out var p) && p.IsBot ? "bot" : "player";
-        string NameId(string id) => id != null && pdById.TryGetValue(id, out var p) ? (p.PlayerName ?? p.BotId ?? "?") : "?";
+        string WhoId(string id) => id == null ? "?" : id == me?.PlayerId ? "me" : mateIds.Contains(id) ? "teammate"
+            : pdById.TryGetValue(id, out var p) ? Rules.Kind(p.IsBot, p.BotId) : "player";
+        string NameId(string id) => id != null && pdById.TryGetValue(id, out var p)
+            ? Rules.DisplayName(p.PlayerName, p.IsBot, p.IsUsingAnonymousMode, p.StreamerModeName, p.PlayerNameCustomOverride, p.BotId) : "?";
         HashSet<uint> PawnsOf(string playerId)
         {
             if (playerId == null) return new();

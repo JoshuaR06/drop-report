@@ -53,7 +53,8 @@
           </Grid>
         </Border>
         <Panel>
-          <c:MapView x:Name="Map" Map="{Binding Map}" Time="{Binding Time}" Follow="{Binding Follow}" />
+          <c:MapView x:Name="Map" Map="{Binding Map}" Time="{Binding Time}" Follow="{Binding Follow}" MapImage="{Binding MapImage}" Geo="{Binding Geo}" />
+          <TextBlock Text="{Binding MapNote}" Classes="muted" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12" />
           <TextBlock Text="No map data for this match" IsVisible="{Binding !HasMap}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted" />
           <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="10,6" CornerRadius="8" Background="{DynamicResource Card2Brush}" Opacity="0.92">
             <StackPanel Orientation="Horizontal" Spacing="12">

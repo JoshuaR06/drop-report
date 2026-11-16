@@ -97,6 +97,21 @@ public class RulesTests
     [InlineData("WID_Paprika_ShieldPot", null)]
     public void Season_items(string id, string kind) => Assert.Equal(kind, Rules.SeasonItem(id));
 
+    [Theory]
+    [InlineData(false, null, "player")]
+    [InlineData(true, "5A2B...", "bot")]
+    [InlineData(true, null, "npc")]
+    public void Bot_player_npc(bool isBot, string botId, string kind) => Assert.Equal(kind, Rules.Kind(isBot, botId));
+
+    [Fact]
+    public void Anonymous_players_stay_anonymous()
+    {
+        Assert.Equal("Anonymous player", Rules.DisplayName("RealName", false, true, null, null, null));
+        Assert.Equal("Streamer123", Rules.DisplayName("RealName", false, false, "Streamer123", null, null));
+        Assert.Equal("RealName", Rules.DisplayName("RealName", false, false, null, null, null));
+        Assert.Equal("Buggy", Rules.DisplayName(null, true, null, null, "Buggy", null));
+    }
+
     [Fact]
     public void Mode_season_and_start_time()
     {
@@ -105,6 +120,19 @@ public class RulesTests
         Assert.Equal(new DateTime(2026, 11, 15, 14, 39, 46), Rules.StartFromFileName("UnsavedReplay-2026.11.15-14.39.46.replay"));
         Assert.Equal("team wiped", Rules.Cause(50));
         Assert.Equal("Hammer Assault Rifle", Rules.StripRarity("Hammer Assault Rifle [Epic]"));
+    }
+}
+
+public class MapGeoTests
+{
+    [Fact]
+    public void World_to_image_matches_the_game_camera()
+    {
+        var g = new MapGeo("b", 43, "Delilah_Terrain", 8500, 508, 299926, new());
+        Assert.Equal((0.5, 0.5), g.ToImage(8500, 508));
+        var (u, v) = g.ToImage(8500 + 299926 / 2.0, 508 - 299926 / 2.0);   // +X = right edge, -Y = top edge
+        Assert.Equal(1.0, u, 6);
+        Assert.Equal(0.0, v, 6);
     }
 }
 

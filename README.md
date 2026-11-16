@@ -17,8 +17,8 @@ Your game saves a replay file after every match. Booty Board reads those files a
   bots, damage, headshot rate, accuracy, and how you went down (weapon type, distance, bled out or finished).
 - **Weapons, with their real in-game names and rarity**: eliminations, knocks, damage, hits and headshot % per weapon.
 - **Loot**: what every chest dropped, who took it, and your most-looted items.
-- **A playable map of every match**: your and your team's paths, the storm, every chest with a loot pop-up, and every
-  knock and elimination. Scrub, play at 1/4/16x, zoom and pan.
+- **A playable map of every match, on the real island map**: your and your team's paths, the storm, every chest with a
+  loot pop-up, every knock and elimination, and named locations. Scrub, play at 1/4/16x, zoom and pan.
 
 | Match map | Weapons | Loot & treasure |
 |---|---|---|
@@ -40,10 +40,11 @@ Your game saves a replay file after every match. Booty Board reads those files a
    .NET install needed.
 2. In the game, make sure replays are on: **Settings > Game > Replays**, record replays for Battle Royale.
 3. Run Booty Board. Setup walks you through:
-   - **Real item names (optional).** Replays only carry internal code names. Booty Board can read the real names from
-     your installed game's files. That needs three small public downloads for your game version (a decryption key, a
-     field-layout "mappings" file and the Oodle decompression library). The setup screen lists each one before
-     anything is fetched. Redo it from Settings after a game update.
+   - **Real item names and the map (optional).** Replays only carry internal code names. Booty Board can read the real
+     names, and where the map sits in the world, from your installed game's files. That needs a few small public
+     downloads for your game version (a decryption key, a field-layout "mappings" file, the Oodle decompression
+     library, and the map image with location names). The setup screen lists each one before anything is fetched.
+     Redo it from Settings after a game update.
    - **Import.** It saves a copy of every replay (the game keeps only your last 100) and reads them, about a second
      per match.
 4. After you play, hit **Scan for new replays**, or turn on *Watch for new replays while Booty Board is open*.

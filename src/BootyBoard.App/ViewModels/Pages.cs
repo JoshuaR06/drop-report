@@ -43,7 +43,7 @@ public sealed partial class SeasonViewModel : ViewModelBase, IRefreshable
             new Tile("Wins", Fmt.N(s.Wins), s.AvgPlacement != null ? $"avg place {Fmt.N1(s.AvgPlacement)}" : null),
             new Tile("Eliminations", Fmt.N(s.Elims), $"{Fmt.N1(s.Matches > 0 ? (double)s.Elims / s.Matches : 0)} per match (Epic's count)"),
             new Tile("Knocks", Fmt.N(s.Knocks), $"you finished {s.KnocksIFinished}"),
-            new Tile("Players vs bots", $"{s.ElimsPlayers} / {s.ElimsBots}", "elims on players / bots"),
+            new Tile("Players vs AI", $"{s.ElimsPlayers} / {s.ElimsBots}", "elims on players / bots + NPCs"),
             new Tile("Damage to players", Fmt.N(s.DamagePerMatch), "per match (Epic)"),
             new Tile("Headshot rate", Fmt.Pct(s.Headshots, s.Hits), $"{s.Headshots} of {s.Hits} recorded hits"),
             new Tile("Accuracy", s.Accuracy != null ? Fmt.Pct(s.Accuracy * 100) : "–", "Epic, match average"),
@@ -72,7 +72,7 @@ public sealed partial class MatchesViewModel : ViewModelBase, IRefreshable
         Rows = Main.Filter.Apply(Main.Library.Matches).AsEnumerable().Reverse().Select(m =>
         {
             int T(List<ChestTypeCount> l, string type) => l.Where(c => c.Type == type).Sum(c => c.Opened + c.Broken);
-            var down = m.Death == null ? (m.Placement == 1 ? "won" : "–") : m.Death.By == "me" || m.Death.Cause == "bled out" ? "bled out" : $"{m.Death.Cause} ({m.Death.By})";
+            var down = m.Death == null ? (m.Placement == 1 ? "won" : "–") : m.Death.By == "me" || m.Death.Cause == "bled out" ? "bled out" : $"{m.Death.Cause} ({(m.Death.By == "npc" ? "NPC" : m.Death.By)})";
             return new MatchRow(m, Fmt.When(m.Start), m.Mode + (m.Special != null ? " · " + m.Special : ""), m.Placement != null ? "#" + m.Placement : "–",
                 Fmt.N(m.Epic.Elims), m.Fights.Knocks.ToString(), Fmt.N(m.Epic.DamageToPlayers),
                 $"{m.Chests.Opened + m.Chests.Broken} / {m.Chests.Team.Sum(t => t.Opened + t.Broken)}",

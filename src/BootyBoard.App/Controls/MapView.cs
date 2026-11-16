@@ -8,26 +8,35 @@ namespace BootyBoard.App.Controls;
 
 /// <summary>
 /// Playable match map: your and your teammates' trails, others while near you, storm, chests (with a loot callout for a
-/// few seconds after each search), knocks/elims. No map image (positions only). Fortnite +X is north, +Y is east.
-/// Drag to pan, wheel to zoom; follows you until you drag.
+/// few seconds after each search), knocks/elims, over the game's own map image when one is set (oriented as in game:
+/// world X to the right, world Y down). Drag to pan, wheel to zoom; follows you until you drag.
 /// </summary>
 public sealed class MapView : Control
 {
     public static readonly StyledProperty<MapData> MapProperty = AvaloniaProperty.Register<MapView, MapData>(nameof(Map));
     public static readonly StyledProperty<double> TimeProperty = AvaloniaProperty.Register<MapView, double>(nameof(Time));
+    public static readonly StyledProperty<Avalonia.Media.Imaging.Bitmap> MapImageProperty = AvaloniaProperty.Register<MapView, Avalonia.Media.Imaging.Bitmap>(nameof(MapImage));
+    public static readonly StyledProperty<MapGeo> GeoProperty = AvaloniaProperty.Register<MapView, MapGeo>(nameof(Geo));
+    public Avalonia.Media.Imaging.Bitmap MapImage { get => GetValue(MapImageProperty); set => SetValue(MapImageProperty, value); }
+    public MapGeo Geo { get => GetValue(GeoProperty); set => SetValue(GeoProperty, value); }
     public static readonly StyledProperty<bool> FollowProperty = AvaloniaProperty.Register<MapView, bool>(nameof(Follow), true, defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
     public MapData Map { get => GetValue(MapProperty); set => SetValue(MapProperty, value); }
     public double Time { get => GetValue(TimeProperty); set => SetValue(TimeProperty, value); }
     public bool Follow { get => GetValue(FollowProperty); set => SetValue(FollowProperty, value); }
 
-    private double _cx, _cy, _scale = 1000.0 / 30000;   // ~300 m across to start
+    private double _cx, _cy, _scale = 1000.0 / 90000;   // ~900 m across to start
     private Point? _drag;
 
-    static MapView() { AffectsRender<MapView>(MapProperty, TimeProperty, FollowProperty); }
-    public MapView() { ClipToBounds = true; Cursor = new Cursor(StandardCursorType.Hand); }
+    static MapView() { AffectsRender<MapView>(MapProperty, TimeProperty, FollowProperty, MapImageProperty, GeoProperty); }
+    public MapView()
+    {
+        ClipToBounds = true; Cursor = new Cursor(StandardCursorType.Hand);
+        RenderOptions.SetBitmapInterpolationMode(this, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality);   // smooth when zoomed in on the map image
+    }
 
     private IBrush Res(string key) => this.TryFindResource(key, ActualThemeVariant, out var v) && v is IBrush b ? b : Brushes.Gray;
-    private Point S(double x, double y) => new(Bounds.Width / 2 + (y - _cx) * _scale, Bounds.Height / 2 - (x - _cy) * _scale);
+    // _cx/_cy = world X/Y at the view centre; world X -> right, world Y -> down (same as the in-game map)
+    private Point S(double x, double y) => new(Bounds.Width / 2 + (x - _cx) * _scale, Bounds.Height / 2 + (y - _cy) * _scale);
 
     private static int Idx(Track tr, double t)
     {
@@ -48,16 +57,36 @@ public sealed class MapView : Control
         ctx.FillRectangle(Res("CardBrush"), new Rect(Bounds.Size));
         if (m == null) return;
         var mine = m.Tracks.Where(t => t.Role == 0).ToList();
-        if (Follow) foreach (var tr in mine) if (PosAt(tr, T, 5) is { } q) { _cx = q.y; _cy = q.x; break; }
+        if (Follow) foreach (var tr in mine) if (PosAt(tr, T, 5) is { } q) { _cx = q.x; _cy = q.y; break; }
+        // the game's map image underneath, lightly dimmed so paths and markers stand out
+        if (MapImage != null && Geo != null)
+        {
+            var tl = S(Geo.CenterX - Geo.Width / 2, Geo.CenterY - Geo.Width / 2);
+            var size = Geo.Width * _scale;
+            ctx.DrawImage(MapImage, new Rect(tl.X, tl.Y, size, size));
+            using (ctx.PushOpacity(0.28)) ctx.FillRectangle(Res("CardBrush"), new Rect(Bounds.Size));
+        }
 
-        // grid every 100 m
+        // grid every 100 m (only without a map image)
         var grid = new Pen(Res("GridBrush"), 1);
         const double step = 10000;
-        if (_scale * step > 12)
+        if (MapImage == null && _scale * step > 12)
         {
-            double x0 = _cy - Bounds.Height / 2 / _scale, x1 = _cy + Bounds.Height / 2 / _scale, y0 = _cx - Bounds.Width / 2 / _scale, y1 = _cx + Bounds.Width / 2 / _scale;
-            for (var y = Math.Ceiling(y0 / step) * step; y < y1; y += step) ctx.DrawLine(grid, new Point(S(0, y).X, 0), new Point(S(0, y).X, Bounds.Height));
-            for (var x = Math.Ceiling(x0 / step) * step; x < x1; x += step) ctx.DrawLine(grid, new Point(0, S(x, 0).Y), new Point(Bounds.Width, S(x, 0).Y));
+            double x0 = _cx - Bounds.Width / 2 / _scale, x1 = _cx + Bounds.Width / 2 / _scale, y0 = _cy - Bounds.Height / 2 / _scale, y1 = _cy + Bounds.Height / 2 / _scale;
+            for (var x = Math.Ceiling(x0 / step) * step; x < x1; x += step) ctx.DrawLine(grid, new Point(S(x, 0).X, 0), new Point(S(x, 0).X, Bounds.Height));
+            for (var y = Math.Ceiling(y0 / step) * step; y < y1; y += step) ctx.DrawLine(grid, new Point(0, S(0, y).Y), new Point(Bounds.Width, S(0, y).Y));
+        }
+        // location names (from the game's map data), once zoomed in enough to read them
+        if (Geo != null && MapImage != null && _scale > 0.0035)
+        {
+            var lf = new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.Bold);
+            foreach (var poi in Geo.Pois)
+            {
+                var ft = new FormattedText(poi.Name.ToUpperInvariant(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, lf, 12, Brushes.White);
+                var p = S(poi.X, poi.Y); var at = new Point(p.X - ft.Width / 2, p.Y - ft.Height / 2);
+                ctx.DrawGeometry(null, new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 0, 0)), 3, lineJoin: PenLineJoin.Round), ft.BuildGeometry(at));
+                ctx.DrawText(ft, at);
+            }
         }
         // storm: current circle, next one dashed while shrinking
         var z = m.Zones.LastOrDefault(s => s.Start - 60 <= T);
@@ -139,7 +168,7 @@ public sealed class MapView : Control
         base.OnPointerMoved(e);
         if (_drag is not { } d) return;
         var p = e.GetPosition(this);
-        _cx -= (p.X - d.X) / _scale; _cy += (p.Y - d.Y) / _scale; _drag = p;
+        _cx -= (p.X - d.X) / _scale; _cy -= (p.Y - d.Y) / _scale; _drag = p;
         InvalidateVisual();
     }
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -156,7 +185,7 @@ public sealed class MapView : Control
         var pts = Map?.Tracks.Where(t => t.Role < 2).SelectMany(t => t.X.Zip(t.Y)).ToList();
         if (pts == null || pts.Count == 0) return;
         double minX = pts.Min(p => p.First), maxX = pts.Max(p => p.First), minY = pts.Min(p => p.Second), maxY = pts.Max(p => p.Second);
-        _cx = (minY + maxY) / 2; _cy = (minX + maxX) / 2;
+        _cx = (minX + maxX) / 2; _cy = (minY + maxY) / 2;
         _scale = Math.Min(Bounds.Width, Bounds.Height) / (Math.Max(Math.Max(maxX - minX, maxY - minY), 20000) * 1.1);
         Follow = false; InvalidateVisual();
     }

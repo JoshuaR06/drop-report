@@ -13,6 +13,8 @@ Downloaded at runtime, only after the user agrees on the setup screen, and never
 
 - The public decryption key for the installed game version, from fortnite-api.com.
 - The "mappings" (field layout) file for that game version, from uedb.dev.
+- The current season's map image and location names, from fortnite-api.com (the map art belongs to Epic Games; it is
+  fetched to your PC, never bundled or redistributed).
 - An Oodle decompression library built from the Unreal Engine Oodle source (community build at
   github.com/WorkingRobot/OodleUE, the one FModel uses). Oodle is owned by Epic Games Tools; it is not redistributed
   with Booty Board.

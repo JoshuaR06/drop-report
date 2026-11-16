@@ -24,6 +24,24 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     public List<DamageLine> Damage { get; }
     public string DamageNote { get; }
     public bool HasMap => Map != null && Map.Tracks.Count > 0;
+    /// <summary>The game's map image, only for matches from the season it belongs to.</summary>
+    public Avalonia.Media.Imaging.Bitmap MapImage { get; }
+    public MapGeo Geo { get; }
+    public string MapNote { get; }
+
+    private static (string path, DateTime stamp, Avalonia.Media.Imaging.Bitmap bmp, MapGeo geo) _overlay;
+    private static (Avalonia.Media.Imaging.Bitmap, MapGeo) LoadOverlay()
+    {
+        var png = Path.Combine(Services.AppData.GameData, "map.png");
+        var info = Path.Combine(Services.AppData.GameData, "mapinfo.json");
+        if (!File.Exists(png) || !File.Exists(info)) return (null, null);
+        var stamp = File.GetLastWriteTimeUtc(png);
+        if (_overlay.path != png || _overlay.stamp != stamp)
+        {
+            try { _overlay = (png, stamp, new Avalonia.Media.Imaging.Bitmap(png), MapGeo.Load(info)); } catch { return (null, null); }
+        }
+        return (_overlay.bmp, _overlay.geo);
+    }
 
     [ObservableProperty] private double _time;
     [ObservableProperty] private bool _playing;
@@ -35,8 +53,14 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     public MatchDetailViewModel(MainViewModel main, MatchSummary m)
     {
         _main = main; Summary = m; Map = main.Library.LoadMap(m);
+        var (img, geo) = LoadOverlay();
+        if (img != null && geo != null && geo.Season == m.Season) { MapImage = img; Geo = geo; }
+        MapNote = MapImage != null ? ""
+                : geo == null ? "No map image yet: update item names in Settings to add it"
+                : $"No map image for game v{m.Season} (the saved map is from v{geo.Season})";
         bool hide = main.Settings.HideNames;
-        string Nm(string name, string who) => hide || string.IsNullOrEmpty(name) || name == "?" ? who : name;
+        static string Word(string who) => who == "npc" ? "NPC" : who;
+        string Nm(string name, string who) => hide || string.IsNullOrEmpty(name) || name == "?" ? Word(who) : name;
         Title = $"{m.Mode}{(m.Special != null ? " · " + m.Special : "")} · {(m.Placement != null ? "#" + m.Placement : "no placement")}";
         Subtitle = $"{Fmt.When(m.Start)} · {m.Minutes:0} min · game v{m.Season}";
         Duration = Map?.End ?? m.Minutes * 60;
@@ -52,8 +76,8 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
         Chests = (Map?.Chests ?? new()).Where(c => c.Who == "me" || c.Who == "teammate").Select(c => new ChestLine(c.T, Fmt.Clock(c.T),
             $"{c.Chest} {c.Kind}", c.Who == "me" ? "" : "teammate", c.Loot.Select(l => new LootLine(l.Name, l.Rarity, take.GetValueOrDefault(l.TakenBy ?? "", ""))).ToList())).ToList();
         Fights = m.Fights.Mine.Concat(m.Fights.Deaths).OrderBy(f => f.T).Select(f => f.Victim == "me"
-            ? new FightLine(f.T, Fmt.Clock(f.T), f.Kind == "knock" ? "You were knocked" : "You were eliminated", $"by {Nm(f.ByName, f.By)} · {f.Cause}{(f.Dist != null ? $" · {f.Dist} m" : "")}", true)
-            : new FightLine(f.T, Fmt.Clock(f.T), $"{(f.Kind == "knock" ? "Knocked" : f.GunType == 50 ? "Eliminated (team wiped)" : "Eliminated")} {f.Victim}",
+            ? new FightLine(f.T, Fmt.Clock(f.T), f.Kind == "knock" ? "You were knocked" : "You were eliminated", $"by {Nm(f.ByName, f.By)}{(hide ? "" : $" ({Word(f.By)})")} · {f.Cause}{(f.Dist != null ? $" · {f.Dist} m" : "")}", true)
+            : new FightLine(f.T, Fmt.Clock(f.T), $"{(f.Kind == "knock" ? "Knocked" : f.GunType == 50 ? "Eliminated (team wiped)" : "Eliminated")} {Word(f.Victim)}",
                             $"{Nm(f.VictimName, f.Victim)} · {(f.Weapon ?? f.Cause)}{(f.WeaponRarity != null ? $" ({f.WeaponRarity})" : "")}{(f.Dist != null ? $" · {f.Dist} m" : "")}" +
                             (f.Outcome != null && f.Outcome != "finished by me" ? " · " + f.Outcome : ""), false)).ToList();
         Damage = m.Damage.PerWeapon.Select(w => new DamageLine(w.Weapon, w.Rarity, w.BlankHits > 0 ? w.BlankHits.ToString() : w.Hits.ToString(),

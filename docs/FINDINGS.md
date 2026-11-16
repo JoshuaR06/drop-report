@@ -52,6 +52,28 @@ to `src/BootyBoard.ReplayReader`.
   eliminated when their last teammate dies, credited to the knocker).
 - The game's own elimination count = ours minus finishes of another team's knock and minus team-wipe credits.
 
+## Players, bots, NPCs and names (`Rules.Kind`, `Rules.DisplayName`)
+- Every participant is in the replay's player list with an `IsBot` flag. Regular bots also have a `BotId` and use the
+  AI character class `BP_PlayerPawn_Athena_Phoebe_C`. Story NPCs and bosses (e.g. Buggy, Monkey D. Luffy) are bots
+  WITHOUT a BotId.
+- Names: `PlayerName` (bots too; NPCs also carry it in `PlayerNameCustomOverride`). Players in anonymous mode still
+  have their account name in the replay but no anonymous tag (0 of 23 anonymous players over 677 players had one), so
+  Booty Board shows them as "Anonymous player" to respect their choice. A streamer-mode name is used when present.
+
+## Map overlay (`MapGeo.cs`, `GameDataBuilder.MapCamera`)
+- The replay's own map fields (`MapData.WorldGrid*`, `GameData.MapInfo`) decode as garbage/empty with this parser.
+- The game's map UI data says where the map image sits: `Content/UI/IngameMap/<Map>/<Map>_MapUIData`
+  (`FortMapUIData`) -> `CaptureCameraFrontendData` -> `OrthoWidth` (square width in world units) + `WorldOffset`
+  (centre). v43.10: `Delilah_Terrain`, centre (8500, 508), width 299,926. World X runs left to right on the image and
+  world Y top to bottom (as on the in-game map).
+- The main map's image is streamed by the game into an on-demand cache that can't be read, so the image comes from
+  fortnite-api.com/images/map.png (same capture, 2048 px), downloaded at setup with the user's consent and never
+  redistributed. Location names + world positions: fortnite-api.com/v1/map.
+- Verified: of 450 placements tried around the camera numbers, the camera's own were the best fit (93% of 10k player
+  positions on land vs 66-88% for the other orientations).
+- Other map variants in `BlastBerryMapUI` (BlastBerry, DashBerry, JumpBear...) have their own images in the game files
+  (`Capture_Iteration_Discovered_<Map>`) and camera data; not used yet.
+
 ## Item names (`src/BootyBoard.GameData`)
 - Read with CUE4Parse from the installed game (IoStore). Needs the version's AES key, a mappings (.usmap) file and Oodle.
 - The name is `ItemName` (not DisplayName). Rarity is a gameplay tag in the `DataList` fragments

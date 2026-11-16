@@ -53,11 +53,11 @@ public static class FightAnalyzer
         return new FightStats(
             C(f => f.Kind == "knock"), C(f => f.Kind == "elim"),
             C(f => f.Kind == "knock" && f.Victim == "player"), C(f => f.Kind == "elim" && f.Victim == "player"),
-            C(f => f.Kind == "knock" && f.Victim == "bot"), C(f => f.Kind == "elim" && f.Victim == "bot"),
+            C(f => f.Kind == "knock" && f.Victim is "bot" or "npc"), C(f => f.Kind == "elim" && f.Victim is "bot" or "npc"),   // AI: bots + NPC characters
             C(f => f.Kind == "knock" && f.Outcome == "finished by me"), C(f => f.Kind == "knock" && f.Outcome == "finished by teammate"),
             C(f => f.Kind == "knock" && f.Outcome is not ("finished by me" or "finished by teammate")),
             C(f => f.Kind == "elim" && f.KnockedBy == "teammate"), C(f => f.Kind == "elim" && f.KnockedBy == null),
-            C(f => f.Kind == "elim" && f.KnockedBy is "player" or "bot"), C(f => f.Kind == "elim" && f.GunType == 50),
+            C(f => f.Kind == "elim" && f.KnockedBy is "player" or "bot" or "npc"), C(f => f.Kind == "elim" && f.GunType == 50),
             epicElims,
             mine.GroupBy(f => (f.Weapon ?? f.Cause, f.WeaponRarity)).Select(g => new WeaponFights(g.Key.Item1, g.Key.WeaponRarity, g.Count(f => f.Kind == "knock"), g.Count(f => f.Kind == "elim")))
                 .OrderByDescending(g => g.Knocks + g.Elims).ToList(),

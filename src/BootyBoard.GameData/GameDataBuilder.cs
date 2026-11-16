@@ -60,12 +60,17 @@ public sealed class GameDataBuilder
     }
 
     public string ItemTablePath => Path.Combine(_dir, "itemnames.json");
+    /// <summary>Why the map camera wasn't found, if it wasn't (shown in setup; logged).</summary>
+    public static string LastMapError { get; private set; }
+    public string MapImagePath => Path.Combine(_dir, "map.png");
+    public string MapInfoPath => Path.Combine(_dir, "mapinfo.json");
 
     public static IReadOnlyList<Download> Downloads { get; } = new[]
     {
         new Download("Decryption key for your game version (public)", "fortnite-api.com/v2/aes", "~6 KB"),
         new Download("Field layout (mappings) for your game version", "uedb.dev (data.uedb.dev)", "~3 MB"),
         new Download("Oodle decompression library (community build used by FModel)", "github.com/WorkingRobot/OodleUE", "~1 MB"),
+        new Download("Map image and location names for the current season", "fortnite-api.com/images/map.png", "~2.3 MB"),
     };
 
     /// <summary>Build of the current table, or null if none.</summary>
@@ -122,12 +127,39 @@ public sealed class GameDataBuilder
 
         // 4) read the item definitions
         progress?.Report("Reading your game files (about a minute)...");
-        var count = await Task.Run(() => Extract(game.PaksDir, aes, usmap, keyBuild, progress, ct), ct);
+        var (count, cam) = await Task.Run(() => Extract(game.PaksDir, aes, usmap, keyBuild, progress, ct), ct);
+
+        // 5) map overlay: the image the game streams in isn't readable on disk, so it comes from fortnite-api.com;
+        //    where it sits in the world comes from the game's own map camera (read above)
+        if (cam != null)
+        {
+            try
+            {
+                progress?.Report("Fetching the map image...");
+                var png = await Http.GetByteArrayAsync("https://fortnite-api.com/images/map.png", ct);
+                await File.WriteAllBytesAsync(MapImagePath + ".part", png, ct); File.Move(MapImagePath + ".part", MapImagePath, true);
+                var pois = new List<MapGeo.Poi>();
+                try
+                {
+                    var j = JsonDocument.Parse(await Http.GetStringAsync("https://fortnite-api.com/v1/map", ct)).RootElement.GetProperty("data");
+                    foreach (var p in j.GetProperty("pois").EnumerateArray())
+                    {
+                        var n = p.GetProperty("name").GetString(); var l = p.GetProperty("location");
+                        if (!string.IsNullOrWhiteSpace(n)) pois.Add(new MapGeo.Poi(n, l.GetProperty("x").GetDouble(), l.GetProperty("y").GetDouble()));
+                    }
+                }
+                catch { }
+                var geo = new MapGeo(keyBuild, BootyBoard.Rules.SeasonOf(keyBuild), cam.Value.name, cam.Value.cx, cam.Value.cy, cam.Value.width, pois);
+                File.WriteAllText(MapInfoPath, JsonSerializer.Serialize(geo, BootyBoard.Json.Options));
+            }
+            catch (Exception e) { progress?.Report("Map image not available: " + e.Message); }
+        }
+        else progress?.Report("Map position data not found: " + LastMapError);
         progress?.Report($"Done: {count:N0} items named.");
         return count;
     }
 
-    private int Extract(string paks, JsonElement aes, string usmap, string build, IProgress<string> progress, CancellationToken ct)
+    private (int count, (string name, double cx, double cy, double width)? cam) Extract(string paks, JsonElement aes, string usmap, string build, IProgress<string> progress, CancellationToken ct)
     {
         using var provider = new DefaultFileProvider(paks, SearchOption.TopDirectoryOnly, new VersionContainer(EGame.GAME_UE5_LATEST), StringComparer.OrdinalIgnoreCase);
         provider.MappingsContainer = new FileUsmapTypeMappingsProvider(usmap);
@@ -173,7 +205,32 @@ public sealed class GameDataBuilder
         var tmp = ItemTablePath + ".part";
         File.WriteAllText(tmp, JsonSerializer.Serialize(new { build, generated = DateTime.Now, items }));
         File.Move(tmp, ItemTablePath, true);
-        return items.Count;
+        return (items.Count, MapCamera(provider));
+    }
+
+    /// <summary>The main map's capture camera: FortMapUIData under Content/UI/IngameMap -> CaptureCameraFrontendData.</summary>
+    private static (string name, double cx, double cy, double width)? MapCamera(DefaultFileProvider provider)
+    {
+        var keys = provider.Files.Keys.Where(k => k.StartsWith("FortniteGame/Content/UI/IngameMap/", StringComparison.OrdinalIgnoreCase) && k.EndsWith("MapUIData.uasset", StringComparison.OrdinalIgnoreCase)).ToList();
+        LastMapError = keys.Count == 0 ? "no map UI data found under Content/UI/IngameMap" : null;
+        foreach (var k in keys)
+        {
+            try
+            {
+                var ui = provider.LoadPackage(k).GetExports().FirstOrDefault(e => e.Class?.Name.Text == "FortMapUIData");
+                if (ui == null) { LastMapError = $"{k}: no FortMapUIData export"; continue; }
+                if (!ui.TryGetValue(out FSoftObjectPath camPath, "CaptureCameraFrontendData")) { LastMapError = $"{k}: no camera data"; continue; }
+                var cam = provider.LoadPackageObject(camPath.AssetPathName.Text);
+                double ortho = cam.TryGetValue(out float of, "OrthoWidth") ? of : cam.TryGetValue(out double od, "OrthoWidth") ? od : cam.TryGetValue(out int oi, "OrthoWidth") ? oi : 0;
+                if (ortho <= 0) { LastMapError = $"{camPath.AssetPathName.Text}: no OrthoWidth ({cam.Properties.FirstOrDefault(p => p.Name.Text == "OrthoWidth")?.PropertyType.Text})"; continue; }
+                double ox = 0, oy = 0;
+                if (cam.TryGetValue(out CUE4Parse.UE4.Objects.Core.Math.FVector2D off, "WorldOffset")) { ox = off.X; oy = off.Y; }
+                var name = ui.TryGetValue(out FName mapName, "MapName") ? mapName.Text : Path.GetFileNameWithoutExtension(k);
+                return (name, ox, oy, ortho);
+            }
+            catch (Exception e) { LastMapError = $"{Path.GetFileName(k)}: {e.GetType().Name}: {e.Message}"; }
+        }
+        return null;
     }
 
     private static string Sanitize(string s) => string.Concat(s.Select(c => Path.GetInvalidFileNameChars().Contains(c) || c == '+' ? '_' : c));

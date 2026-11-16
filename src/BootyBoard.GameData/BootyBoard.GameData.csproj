@@ -10,4 +10,8 @@
     <PackageReference Include="CUE4Parse" Version="1.2.2.202611" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BootyBoard.ReplayReader\BootyBoard.ReplayReader.csproj" />
+  </ItemGroup>
+
 </Project>
