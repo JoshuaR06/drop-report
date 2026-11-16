@@ -57,7 +57,9 @@ Free and open source. Windows. Reads your own replay files; nothing leaves your 
 ## Install
 
 1. Download `DropReport.exe` from the [latest release](../../releases/latest). It is a single file; no installer, no
-   .NET install needed.
+   .NET install needed. The exe isn't code-signed (that costs money every year), so Windows may say "Windows protected
+   your PC": click **More info**, then **Run anyway**. Every release exe is built by GitHub Actions from the code in this
+   repository ([the workflow](.github/workflows/build.yml)), never on someone's PC.
 2. In the game, make sure replays are on: **Settings > Game > Replays**, record replays for Battle Royale.
 3. Run Drop Report. Setup walks you through:
    - **Real item names and the map (optional).** Replays only carry internal code names. Drop Report can read the real
