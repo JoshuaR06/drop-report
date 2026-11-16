@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BootyBoard.App.ViewModels"
+             x:Class="BootyBoard.App.Views.MatchesView"
+             x:DataType="vm:MatchesViewModel">
+  <DockPanel Margin="28,24,28,20">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+      <StackPanel>
+        <TextBlock Classes="h1" Text="Matches" />
+        <TextBlock Classes="sub" Text="Click a match to replay it on the map." />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <ComboBox ItemsSource="{Binding Main.Filter.Seasons}" SelectedItem="{Binding Main.Filter.Season}" MinWidth="180" />
+        <ComboBox ItemsSource="{Binding Main.Filter.Modes}" SelectedItem="{Binding Main.Filter.Mode}" MinWidth="130" />
+      </StackPanel>
+    </Grid>
+    <Border Classes="card" Padding="8,8">
+      <DockPanel>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="160,130,64,64,64,84,120,100,*" Margin="12,4,12,6">
+          <TextBlock Classes="th" Text="Match" />
+          <TextBlock Classes="th" Grid.Column="1" Text="Mode" />
+          <TextBlock Classes="th num" Grid.Column="2" Text="Place" />
+          <TextBlock Classes="th num" Grid.Column="3" Text="Elims" />
+          <TextBlock Classes="th num" Grid.Column="4" Text="Knocks" />
+          <TextBlock Classes="th num" Grid.Column="5" Text="Damage" />
+          <TextBlock Classes="th num" Grid.Column="6" Text="Chests you / team" />
+          <TextBlock Classes="th num" Grid.Column="7" Text="Rare / Sprite" />
+          <TextBlock Classes="th" Grid.Column="8" Text="Went down to" Margin="24,0,0,0" />
+        </Grid>
+        <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:MatchRow">
+              <Grid ColumnDefinitions="160,130,64,64,64,84,120,100,*">
+                <TextBlock Text="{Binding When}" />
+                <TextBlock Grid.Column="1" Text="{Binding Mode}" Classes="sub" />
+                <TextBlock Grid.Column="2" Text="{Binding Place}" Classes="num" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="3" Text="{Binding Elims}" Classes="num" />
+                <TextBlock Grid.Column="4" Text="{Binding Knocks}" Classes="num" />
+                <TextBlock Grid.Column="5" Text="{Binding Damage}" Classes="num" />
+                <TextBlock Grid.Column="6" Text="{Binding Chests}" Classes="num" />
+                <TextBlock Grid.Column="7" Text="{Binding RareSprite}" Classes="num" />
+                <TextBlock Grid.Column="8" Text="{Binding DownTo}" Classes="sub" Margin="24,0,0,0" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+  </DockPanel>
+</UserControl>

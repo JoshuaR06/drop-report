@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BootyBoard.ReplayReader\BootyBoard.ReplayReader.csproj" />
+    <ProjectReference Include="..\BootyBoard.GameData\BootyBoard.GameData.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <AssemblyName>bootyboard</AssemblyName>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+</Project>
+

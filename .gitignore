@@ -1,0 +1,17 @@
+# build output
+bin/
+obj/
+publish/
+*.user
+.vs/
+
+# never commit game or personal data
+*.replay
+*.usmap
+aes.json
+itemnames.json
+oodle*.dll
+out/
+reports/
+*.summary.json
+*.map.json

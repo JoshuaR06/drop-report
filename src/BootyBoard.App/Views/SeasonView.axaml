@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BootyBoard.App.ViewModels"
+             xmlns:c="using:BootyBoard.App.Controls"
+             x:Class="BootyBoard.App.Views.SeasonView"
+             x:DataType="vm:SeasonViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="28,24,28,28" Spacing="18" MaxWidth="1240">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel>
+          <TextBlock Classes="h1" Text="Season" />
+          <TextBlock Classes="sub" Text="{Binding Subtitle}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <ComboBox ItemsSource="{Binding Main.Filter.Seasons}" SelectedItem="{Binding Main.Filter.Season}" MinWidth="180" />
+          <ComboBox ItemsSource="{Binding Main.Filter.Modes}" SelectedItem="{Binding Main.Filter.Mode}" MinWidth="130" />
+        </StackPanel>
+      </Grid>
+
+      <Border Classes="card" Padding="22,18">
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Text="{Binding Hero}" FontSize="56" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,22,0" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+            <TextBlock Text="TREASURE CHESTS" Classes="h2" Margin="0" Foreground="{DynamicResource AccentBrush}" />
+            <TextBlock Text="{Binding HeroLabel}" Classes="sub" TextWrapping="Wrap" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <StackPanel Spacing="8">
+        <TextBlock Classes="h2" Text="TREASURE HUNT" />
+        <ItemsControl ItemsSource="{Binding Treasure}">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:Tile">
+              <Border Classes="card" Width="188" Margin="0,0,12,12" Padding="14,12">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Label}" Classes="sub" FontSize="13" />
+                  <TextBlock Text="{Binding Value}" Classes="tileValue" />
+                  <TextBlock Text="{Binding Note}" Classes="muted" IsVisible="{Binding Note, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="Counted from your replays: chests you and your teammates opened or broke (team modes share chest rewards). A teammate far from you isn't in your replay, so team counts are a minimum. Quest progress and map fragments live on Epic's servers, not in replays." />
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Classes="h2" Text="MATCH STATS" />
+        <ItemsControl ItemsSource="{Binding Match}">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:Tile">
+              <Border Classes="card" Width="188" Margin="0,0,12,12" Padding="14,12">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Label}" Classes="sub" FontSize="13" />
+                  <TextBlock Text="{Binding Value}" Classes="tileValue" />
+                  <TextBlock Text="{Binding Note}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding Note, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <Grid ColumnDefinitions="*,16,*">
+        <Border Classes="card">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="h2" Text="CHESTS PER MATCH" Margin="0" />
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series1Brush}" Margin="0" /><TextBlock Text="you" Classes="muted" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series2Brush}" Margin="0" /><TextBlock Text="teammates" Classes="muted" /></StackPanel>
+            </StackPanel>
+            <c:ColumnChart Items="{Binding ChestChart}" Height="200" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Grid.Column="2">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="h2" Text="ELIMINATIONS PER MATCH" Margin="0" />
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series1Brush}" Margin="0" /><TextBlock Text="players" Classes="muted" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series2Brush}" Margin="0" /><TextBlock Text="bots" Classes="muted" /></StackPanel>
+            </StackPanel>
+            <c:ColumnChart Items="{Binding ElimChart}" Height="200" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

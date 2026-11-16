@@ -1,0 +1,171 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:BootyBoard.App"
+             x:Class="BootyBoard.App.App"
+             RequestedThemeVariant="Dark">
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <!-- dark: deep sea surfaces, treasure-gold accent; series colors validated for CVD (dataviz checks) -->
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="PageBrush" Color="#0E1116" />
+          <SolidColorBrush x:Key="NavBrush" Color="#0A0D11" />
+          <SolidColorBrush x:Key="CardBrush" Color="#161B22" />
+          <SolidColorBrush x:Key="Card2Brush" Color="#1C232D" />
+          <SolidColorBrush x:Key="LineBrush" Color="#263040" />
+          <SolidColorBrush x:Key="GridBrush" Color="#2C2C2A" />
+          <SolidColorBrush x:Key="InkBrush" Color="#EEF1F5" />
+          <SolidColorBrush x:Key="Ink2Brush" Color="#A9B3C1" />
+          <SolidColorBrush x:Key="MutedBrush" Color="#7D8796" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#E3B341" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#2A2414" />
+          <SolidColorBrush x:Key="Series1Brush" Color="#3987E5" />
+          <SolidColorBrush x:Key="Series2Brush" Color="#D95926" />
+          <SolidColorBrush x:Key="WashBrush" Color="#1F3987E5" />
+          <SolidColorBrush x:Key="RarityCommon" Color="#A3AAB8" />
+          <SolidColorBrush x:Key="RarityUncommon" Color="#4ADE80" />
+          <SolidColorBrush x:Key="RarityRare" Color="#60A5FA" />
+          <SolidColorBrush x:Key="RarityEpic" Color="#C084FC" />
+          <SolidColorBrush x:Key="RarityLegendary" Color="#FB923C" />
+          <SolidColorBrush x:Key="RarityMythic" Color="#FACC15" />
+          <SolidColorBrush x:Key="RarityExotic" Color="#22D3EE" />
+          <SolidColorBrush x:Key="MapMeBrush" Color="#60A5FA" />
+          <SolidColorBrush x:Key="MapMateBrush" Color="#2DD4BF" />
+          <SolidColorBrush x:Key="MapOtherBrush" Color="#5B6375" />
+          <SolidColorBrush x:Key="MapOpenedBrush" Color="#4ADE80" />
+          <SolidColorBrush x:Key="MapBrokenBrush" Color="#FB923C" />
+          <SolidColorBrush x:Key="MapKillBrush" Color="#F87171" />
+          <SolidColorBrush x:Key="MapStormBrush" Color="#A78BFA" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="PageBrush" Color="#F6F4EE" />
+          <SolidColorBrush x:Key="NavBrush" Color="#EDE9DD" />
+          <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="Card2Brush" Color="#F9F7F1" />
+          <SolidColorBrush x:Key="LineBrush" Color="#E3DFD3" />
+          <SolidColorBrush x:Key="GridBrush" Color="#E1E0D9" />
+          <SolidColorBrush x:Key="InkBrush" Color="#14171C" />
+          <SolidColorBrush x:Key="Ink2Brush" Color="#4B5361" />
+          <SolidColorBrush x:Key="MutedBrush" Color="#7A808A" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#A5670E" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#F6E9CF" />
+          <SolidColorBrush x:Key="Series1Brush" Color="#2A78D6" />
+          <SolidColorBrush x:Key="Series2Brush" Color="#EB6834" />
+          <SolidColorBrush x:Key="WashBrush" Color="#142A78D6" />
+          <SolidColorBrush x:Key="RarityCommon" Color="#7B8494" />
+          <SolidColorBrush x:Key="RarityUncommon" Color="#15803D" />
+          <SolidColorBrush x:Key="RarityRare" Color="#1D4ED8" />
+          <SolidColorBrush x:Key="RarityEpic" Color="#7E22CE" />
+          <SolidColorBrush x:Key="RarityLegendary" Color="#C2410C" />
+          <SolidColorBrush x:Key="RarityMythic" Color="#A16207" />
+          <SolidColorBrush x:Key="RarityExotic" Color="#0E7490" />
+          <SolidColorBrush x:Key="MapMeBrush" Color="#2563EB" />
+          <SolidColorBrush x:Key="MapMateBrush" Color="#0D9488" />
+          <SolidColorBrush x:Key="MapOtherBrush" Color="#9AA3B5" />
+          <SolidColorBrush x:Key="MapOpenedBrush" Color="#16A34A" />
+          <SolidColorBrush x:Key="MapBrokenBrush" Color="#EA580C" />
+          <SolidColorBrush x:Key="MapKillBrush" Color="#DC2626" />
+          <SolidColorBrush x:Key="MapStormBrush" Color="#7C3AED" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, Inter, sans-serif</FontFamily>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Window">
+      <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+      <Setter Property="Background" Value="{DynamicResource PageBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="16" />
+    </Style>
+    <Style Selector="TextBlock.h1">
+      <Setter Property="FontSize" Value="26" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.h2">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+    <Style Selector="TextBlock.sub">
+      <Setter Property="Foreground" Value="{DynamicResource Ink2Brush}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.tileValue">
+      <Setter Property="FontSize" Value="28" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.gold">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Foreground" Value="#14171C" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="14,8" />
+    </Style>
+    <Style Selector="Button.gold:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Opacity" Value="0.9" />
+    </Style>
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12,7" />
+    </Style>
+    <!-- left navigation -->
+    <Style Selector="ListBox.nav">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem">
+      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem:selected TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <!-- table rows -->
+    <Style Selector="Grid.row">
+      <Setter Property="Margin" Value="0,0,0,0" />
+    </Style>
+    <Style Selector="Border.rowline">
+      <Setter Property="BorderBrush" Value="{DynamicResource GridBrush}" />
+      <Setter Property="BorderThickness" Value="0,1,0,0" />
+      <Setter Property="Padding" Value="0,7" />
+    </Style>
+    <Style Selector="TextBlock.num">
+      <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+    <Style Selector="TextBlock.th">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="Border.swatch">
+      <Setter Property="Width" Value="10" />
+      <Setter Property="Height" Value="10" />
+      <Setter Property="CornerRadius" Value="2" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </Application.Styles>
+</Application>

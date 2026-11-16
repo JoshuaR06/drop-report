@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BootyBoard.App.ViewModels"
+             x:Class="BootyBoard.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="900" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Settings" />
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="REPLAYS" Margin="0" />
+          <TextBlock Text="Fortnite's replay folder" Classes="sub" />
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Text="{Binding ReplayFolder}" />
+            <Button Grid.Column="1" Classes="ghost" Content="Browse" Margin="8,0,0,0" Click="OnBrowseReplay" />
+          </Grid>
+          <TextBlock Text="Extra folders to import old replays from" Classes="sub" Margin="0,6,0,0" />
+          <ItemsControl ItemsSource="{Binding ExtraFolders}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Classes="ghost" Content="Remove" Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).RemoveExtraFolderCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Classes="ghost" Content="Add folder" Click="OnAddFolder" />
+          <ToggleSwitch IsChecked="{Binding WatchWhileOpen}" OnContent="Watch for new replays while Booty Board is open" OffContent="Watch for new replays while Booty Board is open" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="Booty Board never starts with Windows and never runs during a match being recorded. It reads finished replay files at low priority, so your game isn't slowed down." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Classes="ghost" Content="Re-read all saved replays" Command="{Binding RereadAllCommand}" />
+          </StackPanel>
+          <TextBlock Text="{Binding Message}" Classes="sub" />
+        </StackPanel>
+      </Border>
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="ITEM NAMES" Margin="0" />
+          <TextBlock Text="{Binding NamesText}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="Real names come from your own game files. After each Fortnite update, update them so new items get their names." />
+          <Button Classes="ghost" Content="Update item names" Command="{Binding UpdateNamesCommand}" />
+        </StackPanel>
+      </Border>
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="DISPLAY &amp; PRIVACY" Margin="0" />
+          <ToggleSwitch IsChecked="{Binding LightTheme}" OnContent="Light theme" OffContent="Dark theme" />
+          <ToggleSwitch IsChecked="{Binding HideNames}" OnContent="Hide other players' names" OffContent="Show other players' names" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="Everything stays on this PC. No account, no telemetry. Hiding names is handy for screenshots and streams." />
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding DataFolder}" Classes="sub" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="ghost" Content="Open data folder" Command="{Binding OpenDataFolderCommand}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

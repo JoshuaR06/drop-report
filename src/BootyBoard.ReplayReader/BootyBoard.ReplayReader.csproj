@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- FortniteReplayReader only loads custom export-group classes from assemblies whose name contains "ReplayReader" -->
+    <AssemblyName>BootyBoard.ReplayReader</AssemblyName>
+    <RootNamespace>BootyBoard</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FortniteReplayReader" Version="3.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BootyBoard.Tests" />
+  </ItemGroup>
+
+</Project>
