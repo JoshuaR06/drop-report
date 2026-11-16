@@ -119,6 +119,12 @@ public sealed partial class MainViewModel : ViewModelBase
     public void Navigate(string key)
     {
         if (key == "setup") { CurrentPage = new SetupViewModel(this); return; }
+        if (key.StartsWith("match:"))   // match:<part of the replay file name> (screenshots)
+        {
+            var hit = Library.Matches.FirstOrDefault(x => x.File.Contains(key[6..], StringComparison.OrdinalIgnoreCase));
+            if (hit != null) OpenMatch(hit);
+            return;
+        }
         if (key == "match")
         {
             var pick = Library.Matches.FirstOrDefault(x => x.Season == Filter.Season?.Value) ?? Library.Matches.FirstOrDefault();

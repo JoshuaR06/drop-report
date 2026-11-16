@@ -77,6 +77,35 @@ public static class Treasure
     /// <summary>The next Treasure Hours session that hasn't ended yet, or null.</summary>
     public static BoostSession NextSession(DateTime nowUtc) => Sessions.FirstOrDefault(s => s.EndUtc > nowUtc);
 
+    /// <summary>Prize id -> name, from the game's prize table (DT_DelilahTreasureHunt_Prizes, v43.10). Rows 14-33 are the
+    /// later weeks' rotations of the same five cosmetic kinds.</summary>
+    public static string PrizeName(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        if (id.Contains("9f73f94d", StringComparison.OrdinalIgnoreCase)) return Token;
+        var m = System.Text.RegularExpressions.Regex.Match(id, @"dpid_item(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!m.Success) return id;
+        var n = int.Parse(m.Groups[1].Value);
+        return n switch
+        {
+            1 => "Gold Outfit", 2 => "Pickaxe", 3 => "Jam Track", 4 => "Loading Screen", 5 => "Gold Car Decal", 6 => Token,
+            9 => "Sprite Gizmo: Extraction Accelerator", 10 => "Sprite Gizmo: Relic Extractor", 11 => "Sprite Gizmo", 12 => "Sprite Gizmo: Sprite Locator",
+            13 => "Sprite Gizmo: Lucky Locator",
+            >= 14 and <= 33 => new[] { "Gold Outfit", "Back Bling", "Jam Track", "Loading Screen", "Gold Car Decal" }[(n - 14) % 5],
+            _ => id,
+        };
+    }
+
+    /// <summary>"At 10:33 you broke a chest that was holding a treasure. The replay doesn't say which."</summary>
+    public static string Describe(TreasureReveal r, double busJump = 0)
+    {
+        var who = r.Who switch { "me" => "you", "teammate" => "a teammate", "other" => "another player", _ => "someone" };
+        var clock = $"{(int)(r.T / 60)}:{(int)(r.T % 60):00}";
+        var chest = r.Chest.ToLowerInvariant().Contains("chest") ? r.Chest.ToLowerInvariant() : "chest";
+        return $"At {clock} {who} {(r.Broken ? "broke" : "opened")} a {chest} that was holding a treasure. " +
+               (r.Prize != null ? $"It was: {r.Prize}." : "The replay doesn't say which prize" + (r.Broken ? ", or whether breaking it cost the prize." : "."));
+    }
+
     public static bool IsRewardChest(string type) => type != null && type.Contains("chest", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Chest searches in one match that roll for rewards under this rule.</summary>

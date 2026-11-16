@@ -22,7 +22,7 @@ public sealed record ShareCardViewModel(string Kicker, string Headline, List<Til
             new("DAMAGE", (m.Epic.DamageToPlayers ?? 0).ToString("N0", ci), "to players"),
             new("CHESTS", Insights.TeamChests(m).ToString(ci), "with my team"),
         };
-        return new ShareCardViewModel(e.Kicker, e.Headline, stats, Insights.Records(m, all), TokenLine(all, s), $"match-{m.Start:yyyy-MM-dd-HHmm}");
+        return new ShareCardViewModel(e.Kicker, e.Headline, stats, Insights.Highlights(m, all), TokenLine(all, s), $"match-{m.Start:yyyy-MM-dd-HHmm}");
     }
 
     public static ShareCardViewModel ForSeason(IReadOnlyList<MatchSummary> ms, IReadOnlyList<MatchSummary> all, Services.Settings s, string seasonLabel)

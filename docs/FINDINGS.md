@@ -99,9 +99,18 @@ while reading).
 - **Gizmos are not chest drops.** The game has in-match items tagged `Item.Gizmo.*` (Extraction Accelerator, Llama
   Supply Drop, Spicy Taco, Snack-O'-Lantern), but none was seen as a pickup in 45 matches; at 1 in 127 over ~1,400
   rolling chests about 11 would be expected. Epic's "any Gizmo" chest reward is account-side too.
-- **Treasure-key prize chests are replicated, barely.** `BGA_DelilahTreasureHuntAnimatedChest` carries
-  `PrizeTemplateId`, `OpeningPawn`, `SourceContainer`, `Tier`, `bSuccess`; it appeared once in 45 matches, and only its
-  destruction was recorded (no prize). Captured by `TreasureHuntPrizeChest` for research runs.
-- **Dug-up treasure chests were not counted before.** The chest you dig up with a Sprite Treasure Map
+- **Treasure reveals are replicated.** The game files (`DelilahTreasureHuntGameplay` plugin) show how treasures work:
+  chests on an allowlist (`DT_DelilahTreasureHunt_ChestReplaceClasses`: regular, Rare, Sprite x4, buried, dug-up
+  treasure x4, Sprite Locator chests; not extraction crates) can hold a treasure, and when such a chest is opened or
+  broken the game swaps in an animated chest (`BGA_DelilahTreasureHuntAnimatedChest`, `_Rare`, `_Sprite`) with
+  `PrizeTemplateId`, `OpeningPawn`, `SourceContainer`, `Tier`, `bSuccess`, `bDestroyed`, `bFromDestruction`. Drop
+  Report records these as `TreasureReveal`s. In 45 season-43 matches there was one: the replay owner **broke** a fresh
+  chest and the reveal arrived with only `bDestroyed = true` (no prize, no success flag), which suggests breaking a
+  treasure chest may forfeit it. Prize and tier types are captured raw until a reveal that carries them turns up.
+- **The prize table** (`DT_DelilahTreasureHunt_Prizes`): Pirate Shop Access (Supreme, `PreRollOnly`, max 1 per match,
+  a special "Clover" granter); Gold Outfit (Supreme); Pickaxe, Back Bling, Jam Track, Loading Screen, Gold Car Decal
+  (Major; rows 14-33 are later weeks' rotations); Sprite Gizmos (Standard, granted straight into the inventory:
+  Extraction Accelerator, Relic Extractor, Sprite Locator, Lucky Locator, one more consumable). Cosmetic prizes are
+  account quests (`Quest_DPID_ItemN`). `Treasure.PrizeName` maps prize ids to these names.- **Dug-up treasure chests were not counted before.** The chest you dig up with a Sprite Treasure Map
   (`B_SpritePosters_Booty_Chest`) has the same searched/searcher fields as a chest; now tracked as "Dug-up treasure
   chest" (5 in season 43: 3 by the replay owner, 2 by teammates). They count as rolling chests.

@@ -36,7 +36,7 @@ public sealed partial class PostMatchViewModel : ViewModelBase
         Headline = e.Headline; Dek = e.Dek;
         var all = main.Library.Matches;
         Stats = Insights.VsUsual(m, all).Select(VersusLine.From).ToList();
-        Records = Insights.Records(m, all);
+        Records = Insights.Highlights(m, all);
         if (m.Season == Treasure.Season)
         {
             var s = main.Settings;

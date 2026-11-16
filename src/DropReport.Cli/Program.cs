@@ -35,6 +35,23 @@ if (args.Length >= 2 && args[0] == "players")
                           $"streamerName='{p.StreamerModeName}' override='{p.PlayerNameCustomOverride}' platform={p.Platform} botId={(p.BotId != null ? "yes" : "")} owner={p.IsReplayOwner}");
     return 0;
 }
+if (args.Length >= 4 && args[0] == "scan-paths")
+{
+    // research: which replays reference asset paths matching a regex (e.g. chest classes): scan-paths <folder> <since> <regex>
+    var rxp = new System.Text.RegularExpressions.Regex(args[3], System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    var hitsByPath = new Dictionary<string, int>();
+    var rs = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= DateTime.Parse(args[2])).OrderBy(f => f).ToList();
+    foreach (var f in rs)
+    {
+        var reader = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
+        try { reader.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
+        foreach (var path in reader.AllPaths.Values.Where(v => v.StartsWith("/") && rxp.IsMatch(v)).Distinct()) hitsByPath[path] = hitsByPath.GetValueOrDefault(path) + 1;
+        Console.Error.Write(".");
+    }
+    Console.WriteLine($"\n{rs.Count} replays");
+    foreach (var kv in hitsByPath.OrderBy(k => k.Key)) Console.WriteLine($"{kv.Value,4} of {rs.Count}  {kv.Key}");
+    return 0;
+}
 if (args.Length >= 2 && args[0] == "scan-rewards")
 {
     // research: does anything reward-like (Gizmo items, token, cosmetics, treasure) ever appear in replays?

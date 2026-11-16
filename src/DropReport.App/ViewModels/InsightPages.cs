@@ -48,6 +48,20 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
     [ObservableProperty] private List<CountLine> _seasonItems = new();
     [ObservableProperty] private List<CountLine> _loot = new();
     [ObservableProperty] private bool _empty;
+    [ObservableProperty] private List<CountLine> _reveals = new();
+    [ObservableProperty] private string _revealsNote = "";
+
+    /// <summary>What a treasure can be, straight from the game's prize table (v43.10).</summary>
+    public List<CountLine> PrizeTable { get; } = new()
+    {
+        new("Pirate Shop Access", "Legendary", "Supreme · only from chests picked at the start of the match, one per match at most", "1 in 137,500"),
+        new("Gold Outfit", "Legendary", "Supreme · a different one each week", "1 in 1,562,500"),
+        new("Vehicle and Gold Car Decal", "Epic", "Major · weekly", "1 in 7,813"),
+        new("Pickaxe or Back Bling", "Epic", "Major · weekly", "1 in 568"),
+        new("Jam Track", "Epic", "Major · weekly", "1 in 391"),
+        new("Loading Screen", "Epic", "Major · weekly", "1 in 272"),
+        new("Sprite Gizmo", "Rare", "Standard · straight into your inventory: Extraction Accelerator, Relic Extractor, Sprite Locator, Lucky Locator", "1 in 127"),
+    };
 
     public double PerChest => 1 / Treasure.Rewards[0].OneIn;
 
@@ -112,6 +126,13 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
 
         Rewards = r.Others.Select(o => new MeterLine(o.Reward.Name, (o.Chance * 100).ToString(o.Chance >= 0.995 ? "0" : o.Chance < 0.1 ? "0.0" : "0", ci) + "%", o.Chance,
             $"1 in {o.Reward.OneIn:N0} per chest · " + (o.Reward.Weekly ? $"chance each week at {o.Rolls:N0} chests a week" : $"chance over your {o.Rolls:N0} chests"))).ToList();
+
+        // treasure reveals: chests that turned out to hold a treasure, in view of your replay
+        var rv = ms.Where(m => m.Reveals != null).SelectMany(m => m.Reveals.Select(x => (m, x))).OrderByDescending(p => p.m.Start).ThenByDescending(p => p.x.T).ToList();
+        Reveals = rv.Select(p => new CountLine($"{p.m.Start:ddd d MMM, h:mm tt} · {p.m.Mode}", p.x.Who == "me" ? "Legendary" : null, Treasure.Describe(p.x), p.x.Who == "me" ? "YOU" : p.x.Who == "teammate" ? "TEAM" : "")).ToList();
+        RevealsNote = rv.Count == 0
+            ? "None yet. When a chest holding a treasure is opened or broken in view of your replay, the game swaps in a treasure chest, and it shows up here."
+            : $"{rv.Count} in {ms.Count} matches. A reveal is the game swapping a chest for its treasure chest; the replay usually doesn't carry which prize (that's settled on Epic's servers).";
 
         // what the chests were
         var s2 = SeasonStats.Compute(ms);
@@ -210,7 +231,7 @@ public sealed partial class HomeViewModel : ViewModelBase, IRefreshable
         LatestKicker = "LATEST MATCH · " + e.Kicker;
         LatestHeadline = e.Headline; LatestDek = e.Dek;
         LatestStats = Insights.VsUsual(m, all).Select(VersusLine.From).ToList();
-        LatestRecords = Insights.Records(m, all);
+        LatestRecords = Insights.Highlights(m, all);
 
         // the session: matches strung together with gaps under 90 minutes, ending with the latest
         var session = new List<MatchSummary> { m };

@@ -9,8 +9,8 @@ namespace DropReport.Analysis;
 public static class MatchAnalyzer
 {
     /// <summary>Bump when the summary gains data: the app re-reads older summaries on its next scan.
-    /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock. 6 = dug-up treasure chests.</summary>
-    public const int SummaryVersion = 6;
+    /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock. 6 = dug-up treasure chests. 7 = Sprite chest variants, Sprite Locator chests, treasure reveals.</summary>
+    public const int SummaryVersion = 7;
 
     public static MatchResult Analyze(string replayPath, ItemTable names, ILogger logger = null, MapGeo geo = null)
     {
@@ -186,6 +186,29 @@ public static class MatchAnalyzer
         var death = lastDeath == null ? null : new DeathInfo(lastDeath.T, lastDeath.By, lastDeath.ByName, lastDeath.Cause, firstKnock?.Dist ?? lastDeath.Dist,
                                                              firstKnock != null, lastDeath.Tags.Contains("Gameplay.Damage.DBNOBleedOut"));
 
+        // ---- treasure reveals (season 43): merge each reveal chest's updates; who = opener, else whoever searched or broke a chest then
+        static string Raw(Unreal.Core.Models.DebuggingObject o)
+        {
+            if (o == null) return null;
+            try { var s = o.FString; if (!string.IsNullOrWhiteSpace(s)) return s.Trim(); } catch { }
+            try { var s = o.StaticName; if (!string.IsNullOrWhiteSpace(s)) return s.Trim(); } catch { }
+            return null;
+        }
+        static string RawNumber(Unreal.Core.Models.DebuggingObject o) { if (o == null) return null; try { return o.TotalBits <= 8 ? o.ByteValue.ToString() : o.IntPacked.ToString(); } catch { return null; } }
+        var reveals = r.PrizeUpdates.Where(p => p.Update is TreasureHuntPrizeChest).GroupBy(p => p.Actor).Select(g =>
+        {
+            var ups = g.Select(p => (TreasureHuntPrizeChest)p.Update).ToList();
+            var t0 = g.Min(p => p.T);
+            var opener = ups.Select(x => x.OpeningPawn).LastOrDefault(x => x != null);
+            var near = r.Chests.Events.Where(e => Math.Abs(e.T - t0) <= 1.5f).OrderBy(e => Math.Abs(e.T - t0)).FirstOrDefault();
+            var who = opener is uint op ? Who(op) : near != null ? Who(near.Pawn) : "unknown";
+            var broken = ups.Any(x => x.bFromDestruction == true || x.bDestroyed == true) && (near == null || near.Kind == "broken" || ups.Any(x => x.bFromDestruction == true));
+            var kind = ups[0] switch { TreasureHuntPrizeChestRare => "Rare Chest", TreasureHuntPrizeChestSprite => "Sprite Chest", _ => near != null ? Rules.ChestLabel(near.Chest) : "Chest" };
+            var prize = ups.Select(x => Raw(x.PrizeTemplateId)).LastOrDefault(x => x != null);
+            return new TreasureReveal(Math.Round(t0, 1), kind, who, broken, ups.Select(x => x.bSuccess).LastOrDefault(x => x != null),
+                                      Treasure.PrizeName(prize), ups.Select(x => RawNumber(x.Tier)).LastOrDefault(x => x != null));
+        }).OrderBy(x => x.T).ToList();
+
         // ---- summary
         var playlist = replay.GameData?.CurrentPlaylist ?? "";
         var summary = new MatchSummary(SummaryVersion, Path.GetFileName(file), Rules.StartFromFileName(file), r.Branch, Rules.SeasonOf(r.Branch), playlist,
@@ -194,7 +217,7 @@ public static class MatchAnalyzer
             new EpicStats(me?.Kills is uint mk ? (int)mk : s?.Eliminations is uint se ? (int)se : null, s?.Assists is uint a ? (int)a : null, s?.Accuracy,
                           s?.DamageToPlayers is uint dp ? (int)dp : null, s?.DamageTaken is uint dt ? (int)dt : null,
                           s?.DamageToStructures is uint ds ? (int)ds : null, s?.TotalTraveled is uint tv ? Math.Round(tv / 100.0) : null),
-            chests, seasonItems, damage, fights, death);
+            chests, seasonItems, damage, fights, death, Reveals: reveals.Count > 0 ? reveals : null);
 
         // ---- map
         var tracks = r.PawnTracks.Where(kv => kv.Value.Count > 1).Select(kv => new Track(kv.Key, Role(kv.Key),

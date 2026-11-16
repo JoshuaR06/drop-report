@@ -50,7 +50,7 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     public Dictionary<uint, string> AllPaths { get; } = new();
     /// <summary>Research: networked class (export group) -> its replicated field names, for groups matching GroupFilter.</summary>
     public Dictionary<string, HashSet<string>> GroupFields { get; } = new();
-    /// <summary>Research (CollectPaths): every update seen on a treasure-hunt prize chest (time, actor, object).</summary>
+    /// <summary>Every update seen on a treasure reveal chest (time, actor, object); merged per actor by the analyzer.</summary>
     public List<(float T, uint? Actor, object Update)> PrizeUpdates { get; } = new();
     public System.Text.RegularExpressions.Regex GroupFilter { get; set; }
     private int _sinceCopy;
@@ -133,7 +133,7 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
             SnapshotGroups();
         }
         uint? guid = ChannelToGuid.TryGetValue(channelIndex, out var g) ? g : null;
-        if (CollectPaths && exportGroup is TreasureHuntPrizeChest) PrizeUpdates.Add((CurrentTimeSeconds, guid, exportGroup));
+        if (exportGroup is TreasureHuntPrizeChest) PrizeUpdates.Add((CurrentTimeSeconds, guid, exportGroup));
         switch (exportGroup)
         {
             case BaseContainer c:

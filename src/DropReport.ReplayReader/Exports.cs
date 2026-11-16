@@ -40,6 +40,25 @@ public class ExtractionChest : TrackedChest { }
 /// <summary>Season 43: the chest you dig up with a Sprite Treasure Map (same searched/searcher fields as a chest).</summary>
 [NetFieldExportGroup("/SpritePosters/Blueprints/Items/Booty/B_SpritePosters_Booty_Chest.B_SpritePosters_Booty_Chest_C", minimalParseMode: ParseMode.Debug)]
 public class SpriteTreasureChest : TrackedChest { }
+[NetFieldExportGroup("/SpritePosters/Blueprints/Items/Booty/B_SpritePosters_Booty_Chest_Variant1.B_SpritePosters_Booty_Chest_Variant1_C", minimalParseMode: ParseMode.Debug)]
+public class SpriteTreasureChestV1 : SpriteTreasureChest { }
+[NetFieldExportGroup("/SpritePosters/Blueprints/Items/Booty/B_SpritePosters_Booty_Chest_Variant2.B_SpritePosters_Booty_Chest_Variant2_C", minimalParseMode: ParseMode.Debug)]
+public class SpriteTreasureChestV2 : SpriteTreasureChest { }
+[NetFieldExportGroup("/SpritePosters/Blueprints/Items/Booty/B_SpritePosters_Booty_Chest_Variant3.B_SpritePosters_Booty_Chest_Variant3_C", minimalParseMode: ParseMode.Debug)]
+public class SpriteTreasureChestV3 : SpriteTreasureChest { }
+
+// The other Sprite Chest looks (season 43). All of these are on the game's treasure-eligible list
+// (DT_DelilahTreasureHunt_ChestReplaceClasses).
+[NetFieldExportGroup("/SpritePosters/Gameplay/RelicChests/B_Delilah_TieredChest_Relics_Variant1.B_Delilah_TieredChest_Relics_Variant1_C", minimalParseMode: ParseMode.Debug)]
+public class RelicChestV1 : RelicChest { }
+[NetFieldExportGroup("/SpritePosters/Gameplay/RelicChests/B_Delilah_TieredChest_Relics_Variant2.B_Delilah_TieredChest_Relics_Variant2_C", minimalParseMode: ParseMode.Debug)]
+public class RelicChestV2 : RelicChest { }
+[NetFieldExportGroup("/SpritePosters/Gameplay/RelicChests/B_Delilah_TieredChest_Relics_Variant3.B_Delilah_TieredChest_Relics_Variant3_C", minimalParseMode: ParseMode.Debug)]
+public class RelicChestV3 : RelicChest { }
+
+/// <summary>The buried chest a Sprite Locator (Relic Finder) leads you to.</summary>
+[NetFieldExportGroup("/ExtractionRelicFinder/Gameplay/Chests/B_Athena_BuriedChest_RelicFinder.B_Athena_BuriedChest_RelicFinder_C", minimalParseMode: ParseMode.Debug)]
+public class RelicFinderChest : TrackedChest { }
 
 /// <summary>Damage cues with the fields the library skips (hit bone, ADS, hit component).</summary>
 [NetFieldExportGroup("/Script/FortniteGame.FortPawn:NetMulticast_Athena_BatchedDamageCues", minimalParseMode: ParseMode.Minimal)]
@@ -58,8 +77,9 @@ public class TrackedDamageCues : FortniteReplayReader.Models.NetFieldExports.RPC
 }
 
 /// <summary>
-/// Research (season 43): the treasure-hunt chest that appears when a chest rolls a prize. Fields captured raw until
-/// their types are known: which prize, who opened it, which chest it came from, the tier, and whether it succeeded.
+/// Season 43 treasure reveal: when a chest holding a treasure is opened or broken, the game swaps in this animated
+/// chest (one class per chest kind, from DT_DelilahTreasureHunt_ChestReplaceClasses). Fields the replay may carry: the
+/// prize, who opened it, the source chest, the tier, success. Prize/tier types are not confirmed yet, so they are raw.
 /// </summary>
 [NetFieldExportGroup("/DelilahTreasureHuntGameplay/Gameplay/Actors/BGA_DelilahTreasureHuntAnimatedChest.BGA_DelilahTreasureHuntAnimatedChest_C", minimalParseMode: ParseMode.Debug)]
 public class TreasureHuntPrizeChest : INetFieldExportGroup
@@ -75,3 +95,9 @@ public class TreasureHuntPrizeChest : INetFieldExportGroup
     [NetFieldExport("bInstantDeath", RepLayoutCmdType.PropertyBool)] public bool? bInstantDeath { get; set; }
     [NetFieldExport("OwnerPersistentID", RepLayoutCmdType.Property)] public DebuggingObject OwnerPersistentID { get; set; }
 }
+
+[NetFieldExportGroup("/DelilahTreasureHuntGameplay/Gameplay/Actors/BGA_DelilahTreasureHuntAnimatedChest_Rare.BGA_DelilahTreasureHuntAnimatedChest_Rare_C", minimalParseMode: ParseMode.Debug)]
+public class TreasureHuntPrizeChestRare : TreasureHuntPrizeChest { }
+
+[NetFieldExportGroup("/DelilahTreasureHuntGameplay/Gameplay/Actors/BGA_DelilahTreasureHuntAnimatedChest_Sprite.BGA_DelilahTreasureHuntAnimatedChest_Sprite_C", minimalParseMode: ParseMode.Debug)]
+public class TreasureHuntPrizeChestSprite : TreasureHuntPrizeChest { }

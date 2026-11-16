@@ -29,7 +29,9 @@ public static class Rules
         "RelicChest" => "Sprite Chest",
         "BuriedChest" => "Buried chest",
         "ExtractionChest" => "Extraction crate",
-        "SpriteTreasureChest" => "Dug-up treasure chest",
+        "SpriteTreasureChest" or "SpriteTreasureChestV1" or "SpriteTreasureChestV2" or "SpriteTreasureChestV3" => "Dug-up treasure chest",
+        "RelicChestV1" or "RelicChestV2" or "RelicChestV3" => "Sprite Chest",
+        "RelicFinderChest" => "Sprite Locator chest",
         _ => cls,
     };
 

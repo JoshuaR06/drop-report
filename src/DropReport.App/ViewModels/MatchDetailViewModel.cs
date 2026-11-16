@@ -1,3 +1,4 @@
+using DropReport.Analysis;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,6 +22,9 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     /// <summary>Set when the replay's elimination events don't add up to Epic's own count (per-weapon credit may be off).</summary>
     public string ElimCheck { get; }
     public bool HasElimCheck => ElimCheck != null;
+    /// <summary>Treasure reveals in this match, one sentence each.</summary>
+    public string TreasureNote { get; }
+    public bool HasTreasure => TreasureNote != null;
     public double Duration { get; }
     public List<Tile> Tiles { get; }
     public List<ChestLine> Chests { get; }
@@ -69,6 +73,7 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
         Title = entry.Headline;
         Subtitle = $"{entry.Kicker} · {m.Minutes:0} MIN · GAME V{m.Season}";
         Dek = entry.Dek;
+        if (m.Reveals is { Count: > 0 } rv) TreasureNote = string.Join("  ", rv.Select(x => Treasure.Describe(x)));
         if (m.Epic.Elims is int epic && epic != m.Fights.Elims)
             ElimCheck = $"Epic counted {epic} eliminations; the replay's elimination events credit you with {m.Fights.Elims}. Totals use Epic's number, so the per-weapon split below may be off by {Math.Abs(epic - m.Fights.Elims)}.";
         Duration = Map?.End ?? m.Minutes * 60;

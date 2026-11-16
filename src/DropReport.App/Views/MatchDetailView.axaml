@@ -22,6 +22,12 @@
       <Border Classes="goldrule" />
       <TextBlock Text="{Binding Title}" Classes="display" Margin="0,16,0,4" TextWrapping="Wrap" />
       <TextBlock Text="{Binding Dek}" Classes="dek" MaxWidth="900" HorizontalAlignment="Left" />
+      <Border IsVisible="{Binding HasTreasure}" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="3,0,0,0" Padding="12,6" Margin="0,8,0,0" HorizontalAlignment="Left" MaxWidth="900">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock Text="TREASURE" Classes="kicker" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding TreasureNote}" TextWrapping="Wrap" MaxWidth="780" />
+        </StackPanel>
+      </Border>
       <TextBlock Text="{Binding ElimCheck}" IsVisible="{Binding HasElimCheck}" Classes="note" MaxWidth="900" HorizontalAlignment="Left" Margin="0,6,0,0" />
     </StackPanel>
 

@@ -12,7 +12,13 @@ public sealed record MatchSummary(
     int? Placement, double Minutes, double BusJump, string NamesBuild,
     EpicStats Epic, ChestStats Chests, List<SeasonPickup> PickedUp, DamageStats Damage, FightStats Fights, DeathInfo Death,
     string Haunt = null,    // the named location you spent the most time near (needs the map data); for headlines
-    string Landing = null); // the named location nearest to where you touched down (null = open ground or no map data)
+    string Landing = null,  // the named location nearest to where you touched down (null = open ground or no map data)
+    List<TreasureReveal> Reveals = null);   // season 43: chests that turned out to hold a treasure
+
+/// <summary>A treasure reveal: a chest holding a treasure was opened or broken and the game swapped in its animated chest.</summary>
+/// <param name="Who">me, teammate, other or unknown: the opener, else whoever searched or broke a chest at that moment.</param>
+/// <param name="Prize">The prize, when the replay carried it (it often doesn't for chests other players open).</param>
+public sealed record TreasureReveal(double T, string Chest, string Who, bool Broken, bool? Success, string Prize, string Tier);
 
 /// <summary>Epic's own end-of-match numbers (from the replay's stats events).</summary>
 public sealed record EpicStats(int? Elims, int? Assists, double? Accuracy, int? DamageToPlayers, int? DamageTaken, int? DamageToStructures, double? TravelledM);
