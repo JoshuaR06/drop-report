@@ -156,7 +156,7 @@ if (args.Length >= 1 && args[0] == "insights")
     Console.WriteLine($"season {season}: {ms.Count} matches");
     Console.WriteLine($"token: {t.Chests} rolling chests ({t.BoostedChests} boosted), chance {t.TokenChance:P3}; pace {t.ChestsPerDay:0.#}/day, {t.DaysLeft} days left -> {t.ProjectedChests:0} chests, {t.ProjectedChance:P3}");
     Console.WriteLine($"  refills {t.Refills}, broken {t.Broken}, team chests {t.TeamChests}");
-    foreach (var o in t.Others) Console.WriteLine($"  {o.Reward.Name,-22} {o.Chance,8:P1}  over {o.Rolls:0} chests{(o.Reward.Weekly ? " a week" : "")}");
+    foreach (var o in t.Others) Console.WriteLine($"  {o.Reward.Name,-22} {o.Chance,8:P1}  over {o.Rolls:0} chests{(o.Reward.Weekly ? " this week" : " this season")}");
     var ws = Insights.Weapons(ms);
     foreach (var p in Insights.BestWeapons(ws)) Console.WriteLine($"weapon  {p.Title,-22} {p.Name,-28} {p.Value,6}  {p.Detail}");
     foreach (var c in Insights.Classes(ms)) Console.WriteLine($"class   {c.Class,-10} elims {c.Elims,3} knocks {c.Knocks,3} share {c.Share:P0} median {c.MedianDist:0} m");

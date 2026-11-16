@@ -141,14 +141,29 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
       <TextBlock Classes="note" Margin="0,8,0,0" MaxWidth="860" HorizontalAlignment="Left"
-                 Text="From the game's own prize table (game files, v43.10). Chests that can hold a treasure, per the game: regular, Rare, Sprite, buried, dug-up treasure and Sprite Locator chests. Extraction crates and ammo boxes can't." />
+                 Text="From the game's own prize table (game files v43.10, with Epic's live updates). Chests that can hold a treasure, per the game: regular, Rare, Sprite, buried, dug-up treasure and Sprite Locator chests. Extraction crates and ammo boxes can't." />
+
+      <Label Classes="section" Content="HOW SURE THIS IS" />
+      <ItemsControl ItemsSource="{Binding Certainty}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:CountLine">
+            <Border Classes="rowline">
+              <Grid ColumnDefinitions="Auto,260,*">
+                <Border Classes="rarity" Background="{Binding Rarity, Converter={x:Static vm:RarityBrushConverter.Instance}}" />
+                <TextBlock Grid.Column="1" Text="{Binding Name}" Classes="rowname" FontSize="17" VerticalAlignment="Top" />
+                <TextBlock Grid.Column="2" Text="{Binding Note}" Classes="sub" TextWrapping="Wrap" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
 
       <!-- the other rewards -->
       <Label Classes="section" Content="THE OTHER CHEST REWARDS" />
       <Grid ColumnDefinitions="*,48,*">
         <StackPanel>
           <ItemsControl ItemsSource="{Binding Rewards}" ItemTemplate="{StaticResource MeterRow}" />
-          <TextBlock Classes="note" Margin="0,8,0,0" Text="Weekly rewards rotate, and you can't get the same one twice, so the weekly chance is what a fresh one looks like each week at your pace." />
+          <TextBlock Classes="note" Margin="0,8,0,0" Text="Weekly rewards rotate every Sunday at 14:00 UTC, so their chance counts this week's chests only." />
         </StackPanel>
         <StackPanel Grid.Column="2">
           <TextBlock Text="CHESTS BY TYPE" Classes="kicker" Margin="0,0,0,4" />
@@ -168,7 +183,7 @@
         </StackPanel>
       </Grid>
       <TextBlock Classes="note" Margin="0,22,0,0" MaxWidth="860" HorizontalAlignment="Left"
-                 Text="Odds from Epic's post on Fortnite Status (7 Nov 2026). The token can be found until the season ends on 5 Dec. Drop Report can't see whether you got a reward: that's on Epic's servers, not in your replays." />
+                 Text="Odds from Epic's post on Fortnite Status (7 Nov 2026). The treasure hunt ends 5 Dec at 14:00 UTC (Epic's live config). Drop Report can't see whether you got a reward: that's on Epic's servers, not in your replays." />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

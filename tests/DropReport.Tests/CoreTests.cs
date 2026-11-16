@@ -370,3 +370,16 @@ public class OddsFileTests
         Assert.Equal(137_500, Treasure.Rewards[0].OneIn);
     }
 }
+public class TreasureWeekTests
+{
+    [Fact]
+    public void Weeks_reset_sunday_14_utc()
+    {
+        // Mon 16 Nov 2026 -> week 3 started Sun 15 Nov 14:00 UTC
+        Assert.Equal(new DateTime(2026, 11, 15, 14, 0, 0, DateTimeKind.Utc), Treasure.WeekStartUtc(new DateTime(2026, 11, 16, 19, 0, 0, DateTimeKind.Utc)));
+        // Sun 15 Nov 13:59 UTC is still week 2
+        Assert.Equal(new DateTime(2026, 11, 8, 14, 0, 0, DateTimeKind.Utc), Treasure.WeekStartUtc(new DateTime(2026, 11, 15, 13, 59, 0, DateTimeKind.Utc)));
+        Assert.Equal(new DateTime(2026, 12, 5, 14, 0, 0, DateTimeKind.Utc), Treasure.SeasonEndUtc);
+        Assert.Null(Treasure.NextSession(new DateTime(2026, 12, 5, 13, 0, 0, DateTimeKind.Utc)));   // the 5 Dec sessions fall after the end
+    }
+}

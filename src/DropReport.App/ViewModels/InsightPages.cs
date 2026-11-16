@@ -51,16 +51,25 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
     [ObservableProperty] private List<CountLine> _reveals = new();
     [ObservableProperty] private string _revealsNote = "";
 
-    /// <summary>What a treasure can be, straight from the game's prize table (v43.10).</summary>
+    /// <summary>What a treasure can be: the game's prize table (v43.10 files + Epic's live update), odds as Epic published them.</summary>
     public List<CountLine> PrizeTable { get; } = new()
     {
-        new("Pirate Shop Access", "Legendary", "Supreme · only from chests picked at the start of the match, one per match at most", "1 in 137,500"),
-        new("Gold Outfit", "Legendary", "Supreme · a different one each week", "1 in 1,562,500"),
-        new("Vehicle and Gold Car Decal", "Epic", "Major · weekly", "1 in 7,813"),
-        new("Pickaxe or Back Bling", "Epic", "Major · weekly", "1 in 568"),
-        new("Jam Track", "Epic", "Major · weekly", "1 in 391"),
-        new("Loading Screen", "Epic", "Major · weekly", "1 in 272"),
-        new("Sprite Gizmo", "Rare", "Standard · straight into your inventory: Extraction Accelerator, Relic Extractor, Sprite Locator, Lucky Locator", "1 in 127"),
+        new("Pirate Shop Access", "Legendary", "Tier Supreme. The game marks it \"pre-roll only\" and at most 1 per match.", "1 in 137,500"),
+        new("Gold Outfit", "Epic", "Tier Major (Epic changed it from Supreme in a live update). A new one each week.", "1 in 1,562,500"),
+        new("Gold Car Decal", "Epic", "Tier Major. Weekly. (Epic's odds list it as \"vehicle and decal\".)", "1 in 7,813"),
+        new("Pickaxe or Back Bling", "Epic", "Tier Major. Weekly.", "1 in 568"),
+        new("Jam Track", "Epic", "Tier Major. Weekly.", "1 in 391"),
+        new("Loading Screen", "Epic", "Tier Major. Weekly.", "1 in 272"),
+        new("Sprite Gizmo", "Rare", "Tier Standard. Added to your gizmo wheel, an account item kept between matches: Extraction Accelerator, Portable Extractor, Sprite Locator, Lucky Locator or Golden Firework.", "1 in 127"),
+    };
+
+    /// <summary>Every claim on this page, with where it comes from.</summary>
+    public List<CountLine> Certainty { get; } = new()
+    {
+        new("Confirmed in the game files", "Uncommon", "The prizes and their tiers, the weekly rotation (Sunday 14:00 UTC), the end of the hunt (5 Dec 14:00 UTC), which chests can hold a treasure, and that gizmo prizes are gizmo-wheel account items.", ""),
+        new("Published by Epic", "Rare", "The per-chest odds and the 7 Nov Treasure Hours boosts (Fortnite Status). Later Treasure Hours are as reported, not confirmed.", ""),
+        new("Seen in your replays", "Epic", "Chests you and your team opened or broke, refills, and treasure chests appearing (\"treasure reveals\").", ""),
+        new("Not knowable from your PC", "Legendary", "What a roll won (granted on Epic's servers), whether a broken or refilled chest can win, whether a teammate's prize reaches you, and where a given gizmo came from: gizmos also come from vending machines, quests and chest loot. Your post-match \"Treasures found\" screen is the record.", ""),
     };
 
     public double PerChest => 1 / Treasure.Rewards[0].OneIn;
@@ -124,8 +133,11 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
                           "Other rewards keep their normal odds. Matches started in a session count as boosted.";
         }
 
+        var reset = Treasure.WeekStartUtc(now).ToLocalTime();
         Rewards = r.Others.Select(o => new MeterLine(o.Reward.Name, (o.Chance * 100).ToString(o.Chance >= 0.995 ? "0" : o.Chance < 0.1 ? "0.0" : "0", ci) + "%", o.Chance,
-            $"1 in {o.Reward.OneIn:N0} per chest · " + (o.Reward.Weekly ? $"chance each week at {o.Rolls:N0} chests a week" : $"chance over your {o.Rolls:N0} chests"))).ToList();
+            $"1 in {o.Reward.OneIn:N0} per chest · " + (o.Reward.Weekly
+                ? $"this week so far: {o.Rolls:N0} chests since {reset:ddd h:mm tt} (about {r.ChestsPerWeek:N0} a week at your pace)"
+                : $"over your {o.Rolls:N0} chests this season"))).ToList();
 
         // treasure reveals: chests that turned out to hold a treasure, in view of your replay
         var rv = ms.Where(m => m.Reveals != null).SelectMany(m => m.Reveals.Select(x => (m, x))).OrderByDescending(p => p.m.Start).ThenByDescending(p => p.x.T).ToList();

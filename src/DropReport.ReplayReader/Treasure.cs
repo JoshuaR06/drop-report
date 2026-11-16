@@ -1,7 +1,7 @@
 namespace DropReport.Analysis;
 
 /// <summary>A reward any chest can roll this season. OneIn = Epic's published per-chest odds (Fortnite Status, 7 Nov 2026).
-/// Weekly rewards rotate each week; once you have one you can't get the same one again.</summary>
+/// Weekly rewards rotate each treasure-hunt week (Sunday 14:00 UTC).</summary>
 public sealed record ChestReward(string Name, double OneIn, bool Weekly, bool Boosted);
 
 /// <summary>A Treasure Hours session: the token's odds are multiplied for chests opened inside it.
@@ -33,8 +33,17 @@ public static class Treasure
         new("Any Gizmo", 127, Weekly: false, Boosted: false),
     };
 
-    /// <summary>The token can be found until the season ends on 5 Dec 2026 (taken as the end of that day, US Eastern).</summary>
-    public static DateTime SeasonEndUtc { get; private set; } = new(2026, 12, 6, 5, 0, 0, DateTimeKind.Utc);
+    /// <summary>The treasure hunt's last week ends 5 Dec 2026 14:00 UTC (Epic's live config, DT_DelilahTreasureHuntFrontend_Weeks
+    /// hotfix seen 15 Nov).</summary>
+    public static DateTime SeasonEndUtc { get; private set; } = new(2026, 12, 5, 14, 0, 0, DateTimeKind.Utc);
+
+    /// <summary>Treasure-hunt weeks run Sunday 14:00 UTC to Sunday 14:00 UTC (same live config). The weekly prizes rotate then.</summary>
+    public static DateTime WeekStartUtc(DateTime nowUtc)
+    {
+        var d = nowUtc.Date.AddHours(14);
+        while (d.DayOfWeek != DayOfWeek.Sunday || d > nowUtc) d = d.AddDays(-1);
+        return d;
+    }
 
     // Saturdays, 2-4 PM and 9-11 PM US Eastern (EST = UTC-5 in November). 7 Nov: 1.5x then 2x (Epic). Later dates: 1.5x as reported.
     public static IReadOnlyList<BoostSession> Sessions { get; private set; } = BuildSessions();
@@ -75,7 +84,7 @@ public static class Treasure
     public static BoostSession SessionAt(DateTime utc) => Sessions.FirstOrDefault(s => utc >= s.StartUtc && utc < s.EndUtc);
 
     /// <summary>The next Treasure Hours session that hasn't ended yet, or null.</summary>
-    public static BoostSession NextSession(DateTime nowUtc) => Sessions.FirstOrDefault(s => s.EndUtc > nowUtc);
+    public static BoostSession NextSession(DateTime nowUtc) => Sessions.FirstOrDefault(s => s.EndUtc > nowUtc && s.StartUtc < SeasonEndUtc);
 
     /// <summary>Prize id -> name, from the game's prize table (DT_DelilahTreasureHunt_Prizes, v43.10). Rows 14-33 are the
     /// later weeks' rotations of the same five cosmetic kinds.</summary>
@@ -89,21 +98,21 @@ public static class Treasure
         return n switch
         {
             1 => "Gold Outfit", 2 => "Pickaxe", 3 => "Jam Track", 4 => "Loading Screen", 5 => "Gold Car Decal", 6 => Token,
-            9 => "Sprite Gizmo: Extraction Accelerator", 10 => "Sprite Gizmo: Relic Extractor", 11 => "Sprite Gizmo", 12 => "Sprite Gizmo: Sprite Locator",
-            13 => "Sprite Gizmo: Lucky Locator",
+            9 => "Sprite Gizmo: Extraction Accelerator", 10 => "Sprite Gizmo: Portable Extractor", 11 => "Sprite Gizmo: Golden Firework",
+            12 => "Sprite Gizmo: Sprite Locator", 13 => "Sprite Gizmo: Lucky Locator",
             >= 14 and <= 33 => new[] { "Gold Outfit", "Back Bling", "Jam Track", "Loading Screen", "Gold Car Decal" }[(n - 14) % 5],
             _ => id,
         };
     }
 
-    /// <summary>"At 10:33 you broke a chest that was holding a treasure. The replay doesn't say which."</summary>
+    /// <summary>"At 10:33 a treasure-hunt chest appeared where you broke a chest." States only what the replay shows.</summary>
     public static string Describe(TreasureReveal r, double busJump = 0)
     {
         var who = r.Who switch { "me" => "you", "teammate" => "a teammate", "other" => "another player", _ => "someone" };
         var clock = $"{(int)(r.T / 60)}:{(int)(r.T % 60):00}";
         var chest = r.Chest.ToLowerInvariant().Contains("chest") ? r.Chest.ToLowerInvariant() : "chest";
-        return $"At {clock} {who} {(r.Broken ? "broke" : "opened")} a {chest} that was holding a treasure. " +
-               (r.Prize != null ? $"It was: {r.Prize}." : "The replay doesn't say which prize" + (r.Broken ? ", or whether breaking it cost the prize." : "."));
+        return $"At {clock} the game's treasure chest appeared as {who} {(r.Broken ? "broke" : "opened")} a {chest}. " +
+               (r.Prize != null ? $"Prize: {r.Prize}." : "The replay doesn't carry the prize; your post-match \"Treasures found\" screen shows whether anything was won.");
     }
 
     public static bool IsRewardChest(string type) => type != null && type.Contains("chest", StringComparison.OrdinalIgnoreCase);
@@ -132,7 +141,7 @@ public static class Treasure
         int Chests, int BoostedChests, double TokenChance, double TokenRolls,   // TokenRolls = chests weighted by boost
         int Matches, double ChestsPerMatch, double ChestsPerDay, int DaysLeft,
         double ProjectedChests, double ProjectedChance, IReadOnlyList<(double Chance, double Chests)> Milestones,
-        IReadOnlyList<(ChestReward Reward, double Chance, double Rolls)> Others, double ChestsPerWeek, List<MatchRolls> PerMatch,
+        IReadOnlyList<(ChestReward Reward, double Chance, double Rolls)> Others, double ChestsPerWeek, int ChestsThisWeek, List<MatchRolls> PerMatch,
         int Refills, int Broken, int TeamChests);
 
 
@@ -157,13 +166,15 @@ public static class Treasure
         var projectedChance = 1 - (1 - chance) * Math.Exp(perDay * daysLeft * Math.Log(1 - p));
 
         var milestones = new[] { 0.10, 0.25, 0.50 }.Select(c => (c, RollsFor(c, p))).ToList();
-        // weekly rewards: the chance per week at your pace (a fresh one each week); the rest: across the season so far
+        // weekly rewards: this week's chests (the week resets Sunday 14:00 UTC); the rest: across the season so far
         var perWeek = perDay * 7;
-        var others = Rewards.Skip(1).Select(r => (r, r.Weekly ? AtLeastOne(perWeek, 1.0 / r.OneIn) : AtLeastOne(chests, 1.0 / r.OneIn), r.Weekly ? perWeek : (double)chests)).ToList();
+        var weekStart = WeekStartUtc(nowUtc);
+        var thisWeek = per.Where(x => DateTime.SpecifyKind(x.Match.Start.Value, DateTimeKind.Local).ToUniversalTime() >= weekStart).Sum(x => x.Chests);
+        var others = Rewards.Skip(1).Select(r => (r, r.Weekly ? AtLeastOne(thisWeek, 1.0 / r.OneIn) : AtLeastOne(chests, 1.0 / r.OneIn), r.Weekly ? thisWeek : (double)chests)).ToList();
 
         int Sum(Func<ChestTypeCount, int> f, bool team) => ms.Sum(m => (team ? m.Chests.Team : m.Chests.ByType).Where(r => IsRewardChest(r.Type)).Sum(f));
         return new Report(chests, per.Where(x => x.Multiplier > 1).Sum(x => x.Chests), chance, rolls,
-            per.Count, per.Count > 0 ? (double)chests / per.Count : 0, perDay, daysLeft, projected, projectedChance, milestones, others, perWeek, per,
+            per.Count, per.Count > 0 ? (double)chests / per.Count : 0, perDay, daysLeft, projected, projectedChance, milestones, others, perWeek, thisWeek, per,
             Sum(r => r.OpenedRefill + r.BrokenRefill, false) + Sum(r => r.OpenedRefill + r.BrokenRefill, true),
             Sum(r => r.Broken, false) + Sum(r => r.Broken, true), Sum(r => r.Opened + r.Broken, true));
     }

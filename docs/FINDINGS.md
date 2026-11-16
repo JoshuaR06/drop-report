@@ -86,31 +86,44 @@ to `src/DropReport.ReplayReader`.
 
 Epic's scoreboard credits an elimination to the player who **knocked** the victim, whoever finishes them (a teammate, a bleed-out, the storm, a team wipe). Finishing someone another player knocked earns nothing. Counting the replay's elimination events that way matches Epic's own end-of-match elimination count exactly in 94 of 100 test matches (42 of 45 in season 43); crediting the final blow instead matched only 74. The 6 left are off by one: a knocked player finished out of the replay's view, an elimination missing from the replay, or a special Solo mode with team-wipe events. `FightEvent.Credit` carries the rule; every count (totals, per weapon, players vs bots, records) uses it, while the match timeline still shows who landed the final blow.
 
-## Treasure rewards: what replays show (researched 16 Nov 2026, 45 season-43 matches)
+## Treasure rewards: what is certain (researched 16 Nov 2026)
 
-`dropreport scan-rewards <folder> [since]` reads replays with every referenced asset path and every networked class's
-field list captured (the parser clears its own caches at the end of a read, so `MatchReader.CollectPaths` copies them
-while reading).
+Every claim below names its source. "Game files" = the installed v43.10 files read offline with CUE4Parse;
+"live config" = Epic's hotfix cached by the game in `Saved\PersistentDownloadDir\EMS` (seen 15 Nov), which overrides the
+files; "replays" = the 45 season-43 replays; "published" = Epic's post on Fortnite Status (7 Nov).
 
-- **The Pirate Shop token and the weekly rewards leave no trace.** No item, no event, no networked field. The treasure
-  hunt's game-state component (`B_GameState_TreasureHuntController`) and the playtime-rewards player component are in
-  every replay but replicate nothing; `GA_Prizes_EventListener` is an ability that only appears as a name. Rewards are
-  decided and granted on Epic's servers. Odds are the best a replay tool can offer.
-- **Gizmos are not chest drops.** The game has in-match items tagged `Item.Gizmo.*` (Extraction Accelerator, Llama
-  Supply Drop, Spicy Taco, Snack-O'-Lantern), but none was seen as a pickup in 45 matches; at 1 in 127 over ~1,400
-  rolling chests about 11 would be expected. Epic's "any Gizmo" chest reward is account-side too.
-- **Treasure reveals are replicated.** The game files (`DelilahTreasureHuntGameplay` plugin) show how treasures work:
-  chests on an allowlist (`DT_DelilahTreasureHunt_ChestReplaceClasses`: regular, Rare, Sprite x4, buried, dug-up
-  treasure x4, Sprite Locator chests; not extraction crates) can hold a treasure, and when such a chest is opened or
-  broken the game swaps in an animated chest (`BGA_DelilahTreasureHuntAnimatedChest`, `_Rare`, `_Sprite`) with
-  `PrizeTemplateId`, `OpeningPawn`, `SourceContainer`, `Tier`, `bSuccess`, `bDestroyed`, `bFromDestruction`. Drop
-  Report records these as `TreasureReveal`s. In 45 season-43 matches there was one: the replay owner **broke** a fresh
-  chest and the reveal arrived with only `bDestroyed = true` (no prize, no success flag), which suggests breaking a
-  treasure chest may forfeit it. Prize and tier types are captured raw until a reveal that carries them turns up.
-- **The prize table** (`DT_DelilahTreasureHunt_Prizes`): Pirate Shop Access (Supreme, `PreRollOnly`, max 1 per match,
-  a special "Clover" granter); Gold Outfit (Supreme); Pickaxe, Back Bling, Jam Track, Loading Screen, Gold Car Decal
-  (Major; rows 14-33 are later weeks' rotations); Sprite Gizmos (Standard, granted straight into the inventory:
-  Extraction Accelerator, Relic Extractor, Sprite Locator, Lucky Locator, one more consumable). Cosmetic prizes are
-  account quests (`Quest_DPID_ItemN`). `Treasure.PrizeName` maps prize ids to these names.- **Dug-up treasure chests were not counted before.** The chest you dig up with a Sprite Treasure Map
-  (`B_SpritePosters_Booty_Chest`) has the same searched/searcher fields as a chest; now tracked as "Dug-up treasure
-  chest" (5 in season 43: 3 by the replay owner, 2 by teammates). They count as rolling chests.
+**Certain (game files / live config)**
+- Prizes (`DT_DelilahTreasureHunt_Prizes`): Pirate Shop Access (tier Supreme, `PreRollMode = PreRollOnly`,
+  `PerMatchMaxAmount = 1`, granted by a dedicated "Clover" granter); Gold Outfit (Supreme in the files, **Major** in the live
+  config); Pickaxe, Back Bling, Jam Track, Loading Screen, Gold Car Decal (Major); Sprite Gizmos (Standard). Rows 14-33 are
+  later weeks' rotations. Cosmetic prizes and the token are account quests (`Quest_DPID_ItemN`).
+- Gizmo prizes are account entitlements in the persistent gizmo wheel ("MorningBell"): `DelilahTreasureHuntSharedGame.ini`
+  maps prizes 9-13 to `/MorningBell/Delilah/Item00-04`. The five: Extraction Accelerator, Portable Extractor, Golden
+  Firework, Sprite Locator, Lucky Locator (in-game names).
+- Gizmos also come from elsewhere: vending machines (`LIST_Vend_Item_Seasonal_*`, weight 0.00001 vs 1000/10000 for the
+  main item, live config), gizmo quests (`MorningBellQuests_S43`) and chest loot (`WID_RelicExtractor_Consumable`). A gizmo
+  in the wheel or in hand says nothing about a treasure.
+- Prizes are rolled per player on the server (`DelilahTreasureHunt_Server.RequestPrizeRollForPlayer`).
+- Treasure-eligible chests (`DT_DelilahTreasureHunt_ChestReplaceClasses`): regular, Rare, Sprite x4, buried, dug-up treasure
+  x4, Sprite Locator (Relic Finder) chests. Not extraction crates. Each maps to an animated chest
+  (`BGA_DelilahTreasureHuntAnimatedChest`, `_Rare`, `_Sprite`).
+- Weeks run Sunday 14:00 UTC to Sunday 14:00 UTC; week 5 ends 5 Dec 2026 14:00 UTC (`DT_DelilahTreasureHuntFrontend_Weeks`,
+  live config). The reported 5 Dec Treasure Hours sessions would fall after that.
+- The reward config names Ranked BR (`RankedPlaylistTags = Athena.Playlist.Habanero.BR`); what that changes isn't in the data.
+
+**Published (not verifiable locally):** the per-chest odds and the 7 Nov Treasure Hours multipliers. Later Treasure Hours
+are as reported by guides.
+
+**Seen in replays:** chest searches (opened/broken/refilled, by whom) and the animated treasure chest appearing (recorded
+as `TreasureReveal`). In 45 season-43 matches it appeared once: 0.1 s after the replay owner broke a fresh chest, carrying
+only `bDestroyed = true`. Neither the prize nor the opener came through. Granted gizmos don't appear as pickups; holding one
+only shows it was in the inventory, not where it came from. The prize-chest classes and the treasure-hunt controller carry
+no prize data otherwise; `GrantedItemProviderComponent` replicates with empty fields.
+
+**Not knowable from the PC:** what a roll won; whether a broken or refilled chest can win; whether a teammate's prize
+reaches you; what "pre-roll only" means in practice; how Ranked differs; where a specific gizmo came from. Fortnite's local
+log doesn't record grants or treasure-quest progress (checked 12-15 Nov logs). The record is the game's own UI: the
+post-match "Treasures found" screen, the gizmo wheel and the treasure-hunt quests.
+
+Research tools: `dropreport scan-rewards`, `scan-paths`, `gizmos` (CLI); the game-file reader in the author's workbench
+(`--find`, `--dump` incl. data/curve tables, `--cat` for config files).

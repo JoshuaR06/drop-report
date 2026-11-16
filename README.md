@@ -70,9 +70,10 @@ Free and open source. Windows. Reads your own replay files; nothing leaves your 
 
 Drop Report only knows what your replay recorded. Being upfront about the limits:
 
-- **Whether you got a reward isn't in replays.** Rewards are rolled and granted on Epic's servers; replays carry no
-  trace of them (checked across 45 matches: no item, event or field). Token and reward odds are your chance, not a
-  record of drops.
+- **What you won isn't in replays.** Prizes are rolled and granted on Epic's servers. A replay can show the game's
+  treasure chest appearing when a chest holding a treasure is opened or broken, but not the prize; your post-match
+  "Treasures found" screen is the record. Token and reward odds are your chance, not a record of drops. Every treasure
+  claim and its source: [docs/FINDINGS.md](docs/FINDINGS.md).
 - **Team chests are a minimum.** A teammate far from you isn't in your replay.
 - **Damage totals are partial.** Hits come through in detail for most guns, but slingshot hits arrive blank and melee
   items send none, so recorded damage is usually 50-60% of the game's own total. Headshot rate and per-hit damage are
