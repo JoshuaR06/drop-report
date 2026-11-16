@@ -35,6 +35,50 @@ if (args.Length >= 2 && args[0] == "players")
                           $"streamerName='{p.StreamerModeName}' override='{p.PlayerNameCustomOverride}' platform={p.Platform} botId={(p.BotId != null ? "yes" : "")} owner={p.IsReplayOwner}");
     return 0;
 }
+if (args.Length >= 3 && args[0] == "refills")
+{
+    // research: how long after a search a chest resets (refills): refills <folder> <since>
+    var rs = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= DateTime.Parse(args[2])).OrderBy(f => f).ToList();
+    var all = new List<(string cls, float delay, float at)>();
+    var gaps = new List<(string cls, float gap, bool reset)>();
+    foreach (var f in rs)
+    {
+        var r = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
+        try { r.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
+        all.AddRange(r.Resets.Select(x => (x.Class, x.ResetAt - x.SearchedAt, x.SearchedAt)));
+        foreach (var g in r.Chests.Events.Where(e => e.Guid != null).GroupBy(e => e.Guid))
+        {
+            var ev = g.OrderBy(e => e.T).ToList();
+            for (var i = 1; i < ev.Count; i++)
+            {
+                var gap = ev[i].T - ev[i - 1].T;
+                // only count a re-search after a reset was seen in between (a real refill, not one search seen twice)
+                var resetBetween = r.Resets.Any(x => x.Chest == g.Key && x.ResetAt > ev[i - 1].T && x.ResetAt <= ev[i].T);
+                gaps.Add((DropReport.Rules.ChestLabel(ev[i].Chest), gap, resetBetween));
+            }
+        }
+        Console.Error.Write(".");
+    }
+    Console.WriteLine($"\n{rs.Count} replays, {all.Count} chest resets seen (finished search -> searcher cleared)");
+    Console.WriteLine("--- search -> next search of the same chest (a refill opened), shortest first:");
+    foreach (var g2 in gaps.Where(x => x.reset).GroupBy(x => x.cls).OrderByDescending(g2 => g2.Count()))
+    {
+        var d = g2.Select(x => x.gap).OrderBy(x => x).ToList();
+        Console.WriteLine($"{g2.Key,-22} n={d.Count,4}  shortest: {string.Join(", ", d.Take(12).Select(x => x.ToString("0")))}s   median {d[d.Count / 2]:0}s");
+    }
+    Console.WriteLine($"re-searches with no reset seen between: {gaps.Count(x => !x.reset)} (gaps: {string.Join(", ", gaps.Where(x => !x.reset).Select(x => x.gap).OrderBy(x => x).Take(10).Select(x => x.ToString("0.0")))}...)");
+    Console.WriteLine("--- reset delays (search finished -> chest reset; upper bounds):");
+    foreach (var g in all.GroupBy(x => x.cls).OrderByDescending(g => g.Count()))
+    {
+        var d = g.Select(x => x.delay).OrderBy(x => x).ToList();
+        float P(double q) => d[(int)Math.Min(d.Count - 1, Math.Floor(q * d.Count))];
+        Console.WriteLine($"{g.Key,-24} n={d.Count,5}  min {d[0],6:0.0}s  p10 {P(0.10),6:0.0}  p25 {P(0.25),6:0.0}  median {P(0.5),6:0.0}  p75 {P(0.75),6:0.0}  max {d[^1],7:0.0}");
+        // histogram in 15 s buckets up to 5 minutes
+        var hist = d.Where(x => x < 300).GroupBy(x => (int)(x / 15) * 15).OrderBy(b => b.Key).Select(b => $"{b.Key}-{b.Key + 15}s:{b.Count()}");
+        Console.WriteLine("     " + string.Join("  ", hist));
+    }
+    return 0;
+}
 if (args.Length >= 3 && args[0] == "chest-looks")
 {
     var rs = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= DateTime.Parse(args[2])).OrderBy(f => f).ToList();

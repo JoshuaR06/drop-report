@@ -135,6 +135,13 @@ a free reward. Most of the time, this will be a Gizmo..."); Ranked (conflicting)
 chest (14 Nov, Squad). By the logic above, that roll was a Major or Supreme prize. The replay carried neither the prize nor
 whether it was granted.
 
+**Measured in replays: how fast chests refill.** No refill timer is in the client files or the live config (the chest only
+has an `OnLootReset` event), so it is set on Epic's server. Measured as "search finished (`bAlreadySearched`) -> searcher
+cleared" over 45 season-43 matches (`dropreport refills`): regular chests median 105 s (half between 62 s and 173 s,
+n=700), always-spawn chests median 90 s (n=341), Rare chests median 92 s (n=113). The spread is wide, so it is not one
+fixed timer. The client only hears about chests near the player, so a reset can arrive late: these are upper bounds.
+A chest can only roll again once it has refilled; an already-searched chest doesn't roll when opened or broken.
+
 **Not knowable from the PC:** what a roll granted, whether a broken treasure chest still pays out, what "eligible damage"
 is, and where a given Gizmo came from. Fortnite's local log doesn't record grants or treasure-quest progress. The record is
 the game's UI: the post-match "Treasures found" screen, the locker and gizmo wheel, the treasure-hunt quests.

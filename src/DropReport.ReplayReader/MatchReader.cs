@@ -55,6 +55,19 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     public System.Text.RegularExpressions.Regex GroupFilter { get; set; }
     private int _sinceCopy;
 
+    /// <summary>Research (CollectPaths): chest resets seen (chest, class, when it was last searched, when its searcher was
+    /// cleared). The client only hears about a chest while near it, so a reset can arrive late: delays are upper bounds.</summary>
+    public List<(uint Chest, string Class, float SearchedAt, float ResetAt)> Resets { get; } = new();
+    private readonly Dictionary<uint, float> _searchedAt = new();
+    /// <summary>A reset = the searcher being cleared (sent as 0, not just absent) on a chest that had finished being searched
+    /// (bAlreadySearched true). Cancelled searches never set bAlreadySearched, so they don't count.</summary>
+    private void NoteReset(uint? guid, TrackedChest c)
+    {
+        if (guid is not uint g) return;
+        if (c.bAlreadySearched) _searchedAt.TryAdd(g, CurrentTimeSeconds);
+        else if (c.SearchingPawn == 0 && _searchedAt.Remove(g, out var at)) Resets.Add((g, c.GetType().Name, at, CurrentTimeSeconds));
+    }
+
     /// <summary>Research (CollectPaths): each chest's look the first time each field arrives (model, alt model index, loot tier, upgrade).</summary>
     public Dictionary<uint, Dictionary<string, string>> ChestLooks { get; } = new();
     private void NoteLook(uint? guid, TrackedChest c)
@@ -154,7 +167,7 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
             case BaseContainer c:
                 Chests.Update(channelIndex, guid, c.GetType().Name, (c as TrackedChest)?.SearchingPawn ?? 0, c.SearchAnimationCount,
                               c.bDestroyed, c.bAlreadySearched, CurrentTimeSeconds);
-                if (CollectPaths && c is TrackedChest tc) NoteLook(guid, tc);
+                if (CollectPaths && c is TrackedChest tc) { NoteLook(guid, tc); NoteReset(guid, tc); }
                 break;
             case PlayerPawn pawn when guid is uint pg:
                 if (pawn.PlayerState is uint ps && ps != 0) PawnGuidToState[pg] = ps;   // 0 on early updates: ignore
