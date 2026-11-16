@@ -201,6 +201,32 @@ if (args.Length >= 3 && args[0] == "gizmos")
     Console.WriteLine($"\n{found} of {rs.Count} matches with a gizmo");
     return 0;
 }
+if (args.Length >= 3 && args[0] == "prize-moments")
+{
+    // research: when the replay owner earned a treasure (Fortnite references its prize handler ability,
+    // GA_TreasureHandler_*, when a prize is granted), and every chest search or break in the 30 s before: prize-moments <folder> <since>
+    var rs = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= DateTime.Parse(args[2])).OrderBy(f => f).ToList();
+    foreach (var f in rs)
+    {
+        var r = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
+        try { r.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
+        var handlers = r.PathFirstSeen.Where(kv => kv.Key.Contains("/PrizeHandlers/", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (handlers.Count == 0) continue;
+        var mine = r.PawnGuidToState.Where(kv => kv.Value == r.RecorderState).Select(kv => kv.Key).ToHashSet();
+        r.StateTeam.TryGetValue(r.RecorderState ?? 0, out var myTeam);
+        string Who(uint pawn) => mine.Contains(pawn) ? "me" : r.PawnGuidToState.TryGetValue(pawn, out var st) && st is uint s && r.StateTeam.TryGetValue(s, out var tm) && tm == myTeam ? "teammate" : "other";
+        var reveals = r.PrizeUpdates.GroupBy(x => x.Actor).Select(g => g.Min(x => x.T)).ToList();
+        foreach (var (path, t) in handlers)
+        {
+            Console.WriteLine($"\n## {Path.GetFileNameWithoutExtension(f)}  {path.Split('/').Last()} first at {t:0.0}s{(reveals.Count > 0 ? $"  (gold chest at {string.Join(", ", reveals.Select(x => $"{x:0.0}s"))})" : "")}");
+            var near = r.Chests.Events.Where(e => e.Kind != "carried" && e.T <= t + 1 && e.T >= t - 30).OrderByDescending(e => e.T).ToList();
+            if (near.Count == 0) Console.WriteLine("     no chest searched or broken in the 30 s before (in view of the replay)");
+            foreach (var e in near.Take(10))
+                Console.WriteLine($"     {Who(e.Pawn),-8} {DropReport.Rules.ChestLabel(e.Chest),-24} {e.Kind,-7} at {e.T,6:0.0}s ({t - e.T,5:0.0}s before)");
+        }
+    }
+    return 0;
+}
 if (args.Length >= 4 && args[0] == "scan-paths")
 {
     // research: which replays reference asset paths matching a regex (e.g. chest classes): scan-paths <folder> <since> <regex>
@@ -211,7 +237,11 @@ if (args.Length >= 4 && args[0] == "scan-paths")
     {
         var reader = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
         try { reader.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
-        foreach (var path in reader.AllPaths.Values.Where(v => v.StartsWith("/") && rxp.IsMatch(v)).Distinct()) hitsByPath[path] = hitsByPath.GetValueOrDefault(path) + 1;
+        foreach (var path in reader.AllPaths.Values.Where(v => v.StartsWith("/") && rxp.IsMatch(v)).Distinct())
+        {
+            hitsByPath[path] = hitsByPath.GetValueOrDefault(path) + 1;
+            if (args.Contains("--list")) Console.WriteLine($"{Path.GetFileNameWithoutExtension(f)}  first at {(reader.PathFirstSeen.TryGetValue(path, out var at) ? $"{at:0}s" : "?")} of {reader.LastTime:0}s  {path}");
+        }
         Console.Error.Write(".");
     }
     Console.WriteLine($"\n{rs.Count} replays");

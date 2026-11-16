@@ -48,6 +48,8 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     /// actor classes, ...). The parser clears its own cache at the end, so it is copied while reading.</summary>
     public bool CollectPaths { get; set; }
     public Dictionary<uint, string> AllPaths { get; } = new();
+    /// <summary>Research: match time each path was first copied in (accurate to a few hundred updates).</summary>
+    public Dictionary<string, float> PathFirstSeen { get; } = new();
     /// <summary>Research: networked class (export group) -> its replicated field names, for groups matching GroupFilter.</summary>
     public Dictionary<string, HashSet<string>> GroupFields { get; } = new();
     /// <summary>Every update seen on a treasure reveal chest (time, actor, object); merged per actor by the analyzer.</summary>
@@ -128,6 +130,13 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     {
         try { base.ReadEvent(archive); }
         catch (Exception e) when (e.GetType().Name == "UnknownEventException") { }
+        CopyPaths();   // events (incl. the end-of-match ones) come late: catch paths first referenced after the last copy
+    }
+
+    private void CopyPaths()
+    {
+        if (!CollectPaths || GuidPaths.Count == AllPaths.Count) return;
+        foreach (var kv in GuidPaths) { if (AllPaths.TryAdd(kv.Key, kv.Value)) PathFirstSeen.TryAdd(kv.Value, CurrentTimeSeconds); }
     }
 
     protected override void OnChannelClosed(uint channelIndex, NetworkGUID actor)
@@ -154,10 +163,10 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     {
         base.OnExportRead(channelIndex, exportGroup);
         if (CurrentTimeSeconds > LastTime) LastTime = CurrentTimeSeconds;
-        if (CollectPaths && ++_sinceCopy >= 500 && GuidPaths.Count != AllPaths.Count)
+        if (CollectPaths && ++_sinceCopy >= 100 && GuidPaths.Count != AllPaths.Count)
         {
             _sinceCopy = 0;
-            foreach (var kv in GuidPaths) AllPaths[kv.Key] = kv.Value;
+            CopyPaths();
             SnapshotGroups();
         }
         uint? guid = ChannelToGuid.TryGetValue(channelIndex, out var g) ? g : null;

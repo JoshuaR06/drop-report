@@ -171,6 +171,32 @@ Seen in the owner's log (12-15 Nov, 46 season-43 matches, each line within about
 earned something, 10 of 26 squad matches, 1 of 10 solo, 1 of 9 duo, including the match with the gold treasure chest.
 The squad-heavy split fits the reported squad sharing, but doesn't prove it.
 
+**Seen and confirmed by the owner (16 Nov evening, 6 matches):** the Treasures Found line appeared after 3 team matches,
+one of them with a gold treasure chest the owner opened; the owner's rewards that session were a Loading Screen and a
+Back Bling (both Major tier). That fits both rules above: the gold chest goes with a Major prize, and the screen line
+goes with a prize earned. The owner thinks the Back Bling came with the gold chest (from memory, not certain). Then the
+Loading Screen came from a match whose replay shows no gold chest: a teammate's chest out of view, or the reported squad
+sharing. The replays can't tell these apart.
+
+**Seen in replays: the moment a treasure is earned (16 Nov, 51 season-43 matches).** When the replay owner earns a prize,
+the replay starts referencing the prize-handler ability
+`/DelilahTreasureHuntGameplay/Gameplay/Abilities/PrizeHandlers/GA_TreasureHandler_Generic`. It appeared in 15 of 51
+replays, and those are exactly the 15 matches whose Treasures Found screen is in the owner's Fortnite log (no misses, none
+extra). It appears about 2 s after a gold treasure chest (the chest animation), and otherwise within about half a second of a
+chest search or break. So replays alone tell which matches earned a treasure and when, back to the first replay, without the
+log. Limit: only the first prize in a match shows (the class is already referenced after that). Tool: `dropreport prize-moments`.
+
+What set each one off (the chest search or break just before; `scan-paths ... --list` gives the times):
+- **The owner's own chest, 10 of 15:** opened 6 times, **broken 4 times** (13 Nov solo, 14 Nov ×3, including the gold-chest
+  match). In one of the opens a teammate opened a chest 0.2 s earlier, so that one could be either. Breaking a chest does
+  pay out, which matches the game's logic (Certain, above).
+- **A teammate's chest, 4 of 15, with the owner touching no chest at that moment:** 14 Nov ×3 (one break, two opens) and
+  16 Nov (a teammate broke a chest; the owner's last open was 7.6 s earlier). Plus 1 match with no chest in view at all (a
+  teammate out of the replay's range). **So a teammate's chest can earn the owner a treasure:** the squad sharing that was
+  only reported before is seen here. It's still a timing match, not Epic's word, but 4 of 4 land within 0.6 s.
+- None of the 15 chests was a refill, so this says nothing yet about refilled chests (they're about 4% of chests).
+- About one match in three earned something (15 of 51). By mode: squad 10 of 28, duo 2 of 10, solo 1 of 11, trio 2 of 2.
+
 **Before a match: nothing.** Nothing the client receives says whether a match holds the token or any prize (see the
 pre-roll section), and no chest looks different.
 
