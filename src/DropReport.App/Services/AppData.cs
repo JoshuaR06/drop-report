@@ -45,8 +45,16 @@ public sealed class Settings
     public string ReplayFolder { get; set; } = AppData.FortniteDemos;
     /// <summary>Extra folders to import old replays from (e.g. an archive you kept yourself).</summary>
     public List<string> ExtraFolders { get; set; } = new();
-    /// <summary>Watch for new replays while the app is open. Off by default; the app never starts with Windows.</summary>
-    public bool WatchWhileOpen { get; set; }
+    /// <summary>Watch for new replays while the app is running (in a window or the tray).</summary>
+    public bool WatchWhileOpen { get; set; } = true;
+    /// <summary>Launch quietly into the tray at sign-in (a per-user Run entry; see Autostart).</summary>
+    public bool StartWithWindows { get; set; }
+    /// <summary>Closing the window keeps Drop Report running in the tray.</summary>
+    public bool CloseToTray { get; set; } = true;
+    /// <summary>Show a match report card in the corner when a new match is read.</summary>
+    public bool PostMatchPopup { get; set; } = true;
+    public bool CheckForUpdates { get; set; } = true;
+    public bool OnlineOdds { get; set; } = true;
     public bool HideNames { get; set; }
     public string Theme { get; set; } = "Dark";
     // Treasure Hunt counting rules (nobody outside Epic knows these for sure; the user picks)

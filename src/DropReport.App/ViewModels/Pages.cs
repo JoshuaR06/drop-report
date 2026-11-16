@@ -44,6 +44,14 @@ public sealed partial class SeasonViewModel : ViewModelBase, IRefreshable
 
     [RelayCommand] private void Open(LogEntry e) { if (e != null) Main.OpenMatch(e.Summary); }
     [RelayCommand] private void AllMatches() => Main.Navigate("matches");
+    [RelayCommand]
+    private async Task ShareSeason()
+    {
+        var ms = Main.Filter.Apply(Main.Library.Matches);
+        if (ms.Count == 0) return;
+        var label = Main.Filter.Season?.Value is int s ? $"Season {s}" : "All seasons";
+        await Main.ShareAsync(ShareCardViewModel.ForSeason(ms, Main.Library.Matches, Main.Settings, label));
+    }
 
     public void Refresh()
     {
@@ -153,7 +161,9 @@ public sealed partial class WeaponsViewModel : ViewModelBase, IRefreshable
                 w.Hits > 0 ? Fmt.N(w.DamagePerMatch) : "–", w.Hits > 0 ? w.Hits.ToString() : "–", Fmt.Pct(w.HeadshotPct),
                 w.MedianDist != null ? $"{w.MedianDist:0} m" : "–", w.Matches.ToString())).ToList();
         var hidden = ws.Count - ws.Count(Enough);
-        TableNote = ShowAll || hidden == 0 ? "" : $"{hidden} weapons you barely used are hidden.";
+        var off = ms.Count(x => x.Epic.Elims is int e2 && e2 != x.Fights.Elims);
+        TableNote = (ShowAll || hidden == 0 ? "" : $"{hidden} weapons you barely used are hidden. ") +
+                    (off == 0 ? "" : $"In {off} of {ms.Count} matches the elimination events don't add up to Epic's count (off by 1 to 3), so per-weapon numbers can be off by about that much.");
         Deaths = s.DeathCauses.Take(8).Select(d => new CountLine(char.ToUpperInvariant(d.Cause[0]) + d.Cause[1..], null,
             $"by {d.By}" + (d.MedianDist != null ? $" · typically {d.MedianDist:0} m" : ""), d.Times.ToString())).ToList();
         DeathSummary = s.Deaths == 0 ? "No deaths recorded" : $"{s.Deaths} deaths in {s.Matches} matches. Knocked first {s.KnockedFirst} times, bled out {s.BledOut}.";

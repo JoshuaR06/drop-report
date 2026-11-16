@@ -9,6 +9,7 @@ public sealed class ViewLocator : IDataTemplate
 {
     private static readonly Dictionary<Type, Func<Control>> Views = new()
     {
+        [typeof(HomeViewModel)] = () => new Views.HomeView(),
         [typeof(SeasonViewModel)] = () => new Views.SeasonView(),
         [typeof(MatchesViewModel)] = () => new Views.MatchesView(),
         [typeof(MatchDetailViewModel)] = () => new Views.MatchDetailView(),

@@ -41,10 +41,21 @@
         </ListBox>
       </DockPanel>
     </Border>
-    <TransitioningContentControl Grid.Column="1" Content="{Binding CurrentPage}">
+    <DockPanel Grid.Column="1">
+    <Border DockPanel.Dock="Top" IsVisible="{Binding Banner, Converter={x:Static ObjectConverters.IsNotNull}}" Background="{DynamicResource AccentSoftBrush}"
+            BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,0,2" Padding="48,10">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+        <Ellipse Width="8" Height="8" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0" />
+        <TextBlock Grid.Column="1" Text="{Binding Banner}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        <Button Grid.Column="2" Classes="gold" Content="{Binding BannerAction}" Command="{Binding DoBannerCommand}" Margin="12,0,6,0" />
+        <Button Grid.Column="3" Classes="ghost" Content="Later" Command="{Binding DismissBannerCommand}" />
+      </Grid>
+    </Border>
+    <TransitioningContentControl Content="{Binding CurrentPage}">
       <TransitioningContentControl.PageTransition>
         <CrossFade Duration="0:0:0.18" />
       </TransitioningContentControl.PageTransition>
     </TransitioningContentControl>
+    </DockPanel>
   </Grid>
 </Window>

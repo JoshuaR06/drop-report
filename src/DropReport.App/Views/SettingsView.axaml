@@ -34,11 +34,31 @@
         </ItemsControl>
         <Button Classes="ghost" Content="Add folder" Click="OnAddFolder" />
         <ToggleSwitch IsChecked="{Binding WatchWhileOpen}" OnContent="Watch for new replays while Drop Report is open" OffContent="Watch for new replays while Drop Report is open" Margin="0,6,0,0" />
-        <TextBlock Classes="note" Text="Drop Report never starts with Windows and never runs during a match being recorded. It reads finished replay files at low priority, so your game isn't slowed down." />
+        <TextBlock Classes="note" Text="Drop Report never reads a match while it is being recorded. It reads finished replay files at low priority, so your game isn't slowed down." />
         <StackPanel Orientation="Horizontal" Spacing="12">
           <Button Classes="ghost" Content="Re-read all saved replays" Command="{Binding RereadAllCommand}" />
           <TextBlock Text="{Binding Message}" Classes="sub" VerticalAlignment="Center" />
         </StackPanel>
+      </StackPanel>
+
+      <!-- running in the background -->
+      <Border Classes="rule" />
+      <StackPanel Spacing="10" Margin="0,14,0,28">
+        <TextBlock Classes="kicker" Text="IN THE BACKGROUND" />
+        <ToggleSwitch IsChecked="{Binding StartWithWindows}" OnContent="Start with Windows" OffContent="Start with Windows" />
+        <TextBlock Classes="note" Text="{Binding AutostartNote}" />
+        <ToggleSwitch IsChecked="{Binding CloseToTray}" OnContent="Closing the window keeps Drop Report in the tray" OffContent="Closing the window quits Drop Report" />
+        <ToggleSwitch IsChecked="{Binding PostMatchPopup}" OnContent="Show a match report card after each match" OffContent="No match report card" />
+        <TextBlock Classes="note" Text="The card slides into the corner without taking focus, so it never pulls you out of the game, and it closes itself." />
+      </StackPanel>
+
+      <!-- online -->
+      <Border Classes="rule" />
+      <StackPanel Spacing="10" Margin="0,14,0,28">
+        <TextBlock Classes="kicker" Text="ONLINE" />
+        <ToggleSwitch IsChecked="{Binding CheckForUpdates}" OnContent="Check GitHub for a new Drop Report version" OffContent="Never check for updates" />
+        <ToggleSwitch IsChecked="{Binding OnlineOdds}" OnContent="Get the latest reward odds and Treasure Hours" OffContent="Use the odds built into this version" />
+        <TextBlock Classes="note" Text="Each is one small download from the Drop Report GitHub repository. Nothing about you or your matches is ever sent." />
       </StackPanel>
 
       <!-- names -->

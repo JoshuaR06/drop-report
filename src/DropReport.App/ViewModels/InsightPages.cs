@@ -3,6 +3,7 @@ using Avalonia.Media.Imaging;
 using DropReport.Analysis;
 using DropReport.App.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace DropReport.App.ViewModels;
 
@@ -160,5 +161,122 @@ public sealed partial class SpotsViewModel : ViewModelBase, IRefreshable
         Note = "Where you touched down: the named place within 300 m of the moment you slowed from gliding to running. " +
                "Picks need 3 or more drops, and a spot's averages are pulled toward your overall average until it has enough drops to stand on its own." +
                (noSpot > 0 ? $" {noSpot} {(noSpot == 1 ? "match" : "matches")} landed away from any named place or had no map data." : "");
+    }
+}
+
+// ---------------------------------------------------------------- Home: the latest match, the session, form, records
+/// <summary>One square in the form guide: placement, colored by how it went.</summary>
+public sealed record FormSquare(string Place, string Tip, bool IsWin, bool IsTop10, MatchSummary Match);
+
+public sealed record RecordCard(string Title, string Value, string Detail, MatchSummary Match);
+
+public sealed partial class HomeViewModel : ViewModelBase, IRefreshable
+{
+    public MainViewModel Main { get; }
+    [ObservableProperty] private string _dateline = "";
+    [ObservableProperty] private bool _hasMatch;
+    [ObservableProperty] private string _latestKicker = "";
+    [ObservableProperty] private string _latestHeadline = "No matches yet";
+    [ObservableProperty] private string _latestDek = "Play a match with replays on. Drop Report reads it the moment it ends.";
+    [ObservableProperty] private List<VersusLine> _latestStats = new();
+    [ObservableProperty] private List<string> _latestRecords = new();
+    [ObservableProperty] private string _sessionTitle = "";
+    [ObservableProperty] private List<Tile> _session = new();
+    [ObservableProperty] private List<FormSquare> _form = new();
+    [ObservableProperty] private List<VersusLine> _formStats = new();
+    [ObservableProperty] private List<RecordCard> _records = new();
+    [ObservableProperty] private string _token = "";
+    [ObservableProperty] private string _tokenDek = "";
+    [ObservableProperty] private string _boost = "";
+    [ObservableProperty] private List<NoteLine> _tips = new();
+    private MatchSummary _latest;
+
+    public HomeViewModel(MainViewModel main) { Main = main; Refresh(); }
+
+    [RelayCommand] private void OpenLatest() { if (_latest != null) Main.OpenMatch(_latest); }
+    [RelayCommand] private async Task ShareLatest() { if (_latest != null) await Main.ShareAsync(ShareCardViewModel.ForMatch(_latest, Main.Library.Matches, Main.Settings)); }
+    [RelayCommand] private void Open(MatchSummary m) { if (m != null) Main.OpenMatch(m); }
+    [RelayCommand] private void Go(string key) => Main.Navigate(key);
+
+    public void Refresh()
+    {
+        var ci = CultureInfo.CurrentCulture;
+        var all = Main.Library.Matches;   // newest first
+        Dateline = $"HOME · {DateTime.Now.ToString("dddd d MMMM", ci).ToUpperInvariant()}";
+        HasMatch = all.Count > 0;
+        if (!HasMatch) return;
+        var m = _latest = all[0];
+        var e = LogEntry.From(m);
+        LatestKicker = "LATEST MATCH · " + e.Kicker;
+        LatestHeadline = e.Headline; LatestDek = e.Dek;
+        LatestStats = Insights.VsUsual(m, all).Select(VersusLine.From).ToList();
+        LatestRecords = Insights.Records(m, all);
+
+        // the session: matches strung together with gaps under 90 minutes, ending with the latest
+        var session = new List<MatchSummary> { m };
+        for (var i = 1; i < all.Count && all[i].Start != null && session[^1].Start != null && (session[^1].Start - all[i].Start)?.TotalMinutes < 90 + session[^1].Minutes; i++)
+            session.Add(all[i]);
+        var day = m.Start?.Date == DateTime.Today ? "TODAY'S SESSION" : $"LAST SESSION · {m.Start?.ToString("ddd d MMM", ci).ToUpperInvariant()}";
+        SessionTitle = day;
+        var placed = session.Where(x => x.Placement is > 0).ToList();
+        Session = new()
+        {
+            new Tile("MATCHES", session.Count.ToString(ci), $"{session.Sum(x => x.Minutes):0} minutes"),
+            new Tile("WINS", session.Count(x => x.Placement == 1).ToString(ci), placed.Count > 0 ? $"best {Headlines.Ordinal(placed.Min(x => x.Placement.Value))}" : null),
+            new Tile("ELIMINATIONS", session.Sum(x => x.Epic.Elims ?? 0).ToString(ci), $"{session.Sum(x => x.Fights.Knocks)} knocks"),
+            new Tile("DAMAGE", session.Sum(x => x.Epic.DamageToPlayers ?? 0).ToString("N0", ci), "to players"),
+            new Tile("CHESTS", session.Sum(Insights.TeamChests).ToString("N0", ci), "you and your team"),
+        };
+
+        // form guide: the last 10, oldest to newest, plus last-10 against the rest of this season
+        var last10 = all.Take(10).ToList();
+        Form = last10.AsEnumerable().Reverse().Select(x => new FormSquare(x.Placement is int p ? p.ToString(ci) : "–",
+            $"{LogEntry.From(x).Headline} · {x.Mode} · {x.Start?.ToString("ddd h:mm tt", ci)}", x.Placement == 1, x.Placement is <= 10, x)).ToList();
+        var rest = all.Skip(10).Where(x => x.Season == m.Season).ToList();
+        VersusLine Avg(string label, Func<MatchSummary, double?> f, string fmt, bool lowerBetter = false)
+        {
+            var a = last10.Select(f).Where(v => v != null).Select(v => v!.Value).DefaultIfEmpty().Average();
+            var value = a.ToString(fmt, ci);
+            var r = rest.Select(f).Where(v => v != null).Select(v => v!.Value).ToList();
+            if (r.Count < 5) return new VersusLine(label, value, "", false, false, true);
+            var d = a - r.Average(); var same = Math.Abs(d) <= Math.Max(0.1, Math.Abs(r.Average()) * 0.06);
+            var better = lowerBetter ? d < 0 : d > 0;
+            var delta = same ? "steady" : $"{(d > 0 ? "▲" : "▼")} {Math.Abs(d).ToString(fmt, ci)} vs the rest of the season";
+            return new VersusLine(label, value, delta, !same && better, !same && !better, same);
+        }
+        FormStats = new()
+        {
+            Avg("AVG PLACE", x => x.Placement, "0.0", lowerBetter: true),
+            Avg("ELIMS A MATCH", x => x.Epic.Elims, "0.0"),
+            Avg("DAMAGE A MATCH", x => x.Epic.DamageToPlayers, "N0"),
+            Avg("CHESTS A MATCH", x => Insights.TeamChests(x), "0.0"),
+        };
+
+        // personal records, all time
+        RecordCard Rec(string title, Func<MatchSummary, double> f, Func<MatchSummary, string> value)
+        {
+            var best = all.OrderByDescending(f).ThenBy(x => x.Start).First();
+            return new RecordCard(title, value(best), $"{best.Start?.ToString("d MMM", ci)} · {best.Mode} · {LogEntry.From(best).Headline}", best);
+        }
+        Records = new()
+        {
+            Rec("MOST ELIMINATIONS", x => x.Epic.Elims ?? 0, x => (x.Epic.Elims ?? 0).ToString(ci)),
+            Rec("MOST DAMAGE", x => x.Epic.DamageToPlayers ?? 0, x => (x.Epic.DamageToPlayers ?? 0).ToString("N0", ci)),
+            Rec("MOST CHESTS", x => Insights.TeamChests(x), x => Insights.TeamChests(x).ToString(ci)),
+            Rec("MOST REAL PLAYERS", x => x.Fights.ElimsPlayers, x => x.Fights.ElimsPlayers.ToString(ci)),
+        };
+
+        // the pirate token at a glance (treasure season only)
+        var s = Main.Settings;
+        var season = all.Where(x => x.Season == Treasure.Season).ToList();
+        var t = Treasure.Build(season, new CountRule(s.CountRefills, s.CountBroken, s.CountTeam), DateTime.UtcNow);
+        Token = (t.TokenChance * 100).ToString("0.00", ci) + "%";
+        TokenDek = t.DaysLeft > 0 ? $"{(t.ProjectedChance * 100).ToString("0.0", ci)}% by 5 Dec at your pace · {t.Chests:N0} chests so far" : "The token season is over";
+        var live = Treasure.SessionAt(DateTime.UtcNow); var next = live ?? Treasure.NextSession(DateTime.UtcNow);
+        Boost = next == null ? "" : live != null ? $"Treasure Hours on now: {next.Multiplier:0.#}x token odds until {next.EndUtc.ToLocalTime():h:mm tt}"
+            : $"Next Treasure Hours: {next.StartUtc.ToLocalTime():ddd d MMM, h:mm tt} ({next.Multiplier:0.#}x)";
+
+        Tips = Insights.Notes(all.Where(x => x.Season == m.Season).ToList()).OrderBy(n => n.Kind == "weakness" ? 0 : n.Kind == "tip" ? 1 : 2).Take(3)
+            .Select(n => new NoteLine(n.Kind, n.Headline, n.Detail)).ToList();
     }
 }

@@ -1,0 +1,152 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DropReport.App.ViewModels"
+             xmlns:c="using:DropReport.App.Controls"
+             x:Class="DropReport.App.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+  <UserControl.Resources>
+    <DataTemplate x:Key="VersusCell" x:DataType="vm:VersusLine">
+      <Border Classes="cell" Width="200" Margin="0,0,0,8">
+        <StackPanel Spacing="1">
+          <TextBlock Text="{Binding Label}" Classes="label" />
+          <c:Ticker Value="{Binding Value}" Classes="stat" FontSize="44" />
+          <TextBlock Text="{Binding Delta}" Classes="delta" Classes.better="{Binding IsBetter}" Classes.worse="{Binding IsWorse}" />
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+  <ScrollViewer>
+    <StackPanel Margin="48,34,48,40" MaxWidth="1180">
+      <TextBlock Text="{Binding Dateline}" Classes="kicker" Margin="0,0,0,10" />
+      <Border Classes="goldrule" />
+
+      <!-- latest match -->
+      <Panel Margin="0,10,0,0">
+        <c:Stripes />
+        <StackPanel Margin="0,16,0,8" Spacing="4">
+          <TextBlock Text="{Binding LatestKicker}" Classes="label" Foreground="{DynamicResource AccentBrush}" />
+          <TextBlock Text="{Binding LatestHeadline}" Classes="display" FontSize="56" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding LatestDek}" Classes="dek" MaxWidth="820" HorizontalAlignment="Left" />
+          <ItemsControl ItemsSource="{Binding LatestStats}" ItemTemplate="{StaticResource VersusCell}" Margin="0,16,0,0" IsVisible="{Binding HasMatch}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          </ItemsControl>
+          <ItemsControl ItemsSource="{Binding LatestRecords}" Margin="0,6,0,0">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <Border Background="{DynamicResource AccentBrush}" Padding="12,3" Margin="6,2,10,2">
+                  <Border.RenderTransform><SkewTransform AngleX="-12" /></Border.RenderTransform>
+                  <TextBlock Text="{Binding}" FontFamily="{DynamicResource DisplayFont}" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource OnAccentBrush}" />
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,12,0,0" IsVisible="{Binding HasMatch}">
+            <Button Classes="gold" Content="Open the match report" Command="{Binding OpenLatestCommand}" />
+            <Button Classes="ghost" Content="Share card" Command="{Binding ShareLatestCommand}" ToolTip.Tip="Copies an image of this match you can paste into Discord" />
+            <Button Classes="ghost" Content="Every match" Command="{Binding GoCommand}" CommandParameter="matches" />
+          </StackPanel>
+        </StackPanel>
+      </Panel>
+
+      <!-- session + token -->
+      <Grid ColumnDefinitions="*,28,340" IsVisible="{Binding HasMatch}">
+        <StackPanel>
+          <Label Classes="section" Content="{Binding SessionTitle}" />
+          <ItemsControl ItemsSource="{Binding Session}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:Tile">
+                <Border Classes="cell" Width="126" Margin="0,0,0,10">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Label}" Classes="label" />
+                    <c:Ticker Value="{Binding Value}" Classes="stat" />
+                    <TextBlock Text="{Binding Note}" Classes="note" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+        <Border Grid.Column="2" Margin="0,30,0,0" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,3,0,0" Padding="20,14,20,16">
+          <StackPanel Spacing="2">
+            <TextBlock Text="PIRATE TOKEN" Classes="kicker" />
+            <c:Ticker Value="{Binding Token}" Classes="pickValue" FontSize="54" LineHeight="58" />
+            <TextBlock Text="chance so far" Classes="note" />
+            <TextBlock Text="{Binding TokenDek}" Classes="sub" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,0" />
+            <TextBlock Text="{Binding Boost}" Classes="note" TextWrapping="Wrap" Margin="0,4,0,8" />
+            <Button Classes="ghost" Content="Treasure Hunt" Command="{Binding GoCommand}" CommandParameter="treasure" HorizontalAlignment="Left" />
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- form guide -->
+      <Label Classes="section" Content="FORM: YOUR LAST 10" IsVisible="{Binding HasMatch}" />
+      <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasMatch}">
+        <StackPanel>
+          <ItemsControl ItemsSource="{Binding Form}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:FormSquare">
+                <Button Classes="link" Padding="0" Margin="0" Cursor="Hand" ToolTip.Tip="{Binding Tip}"
+                        Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).OpenCommand}" CommandParameter="{Binding Match}">
+                  <Border Classes="form" Classes.top10="{Binding IsTop10}" Classes.win="{Binding IsWin}">
+                    <TextBlock Text="{Binding Place}" />
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Grid ColumnDefinitions="*,*" Margin="0,6,8,0">
+            <TextBlock Text="◂ OLDER" Classes="label" />
+            <TextBlock Grid.Column="1" Text="LATEST ▸" Classes="label" HorizontalAlignment="Right" />
+          </Grid>
+          <TextBlock Classes="note" Margin="0,4,0,0" Text="Filled = Victory Royale, outlined = top 10. Click a square to open that match." />
+        </StackPanel>
+      </Grid>
+      <ItemsControl ItemsSource="{Binding FormStats}" ItemTemplate="{StaticResource VersusCell}" Margin="0,16,0,0" IsVisible="{Binding HasMatch}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      </ItemsControl>
+
+      <!-- records -->
+      <Label Classes="section" Content="PERSONAL RECORDS" IsVisible="{Binding HasMatch}" />
+      <ItemsControl ItemsSource="{Binding Records}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:RecordCard">
+            <Button Classes="link" Padding="0" Margin="0" HorizontalAlignment="Left"
+                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).OpenCommand}" CommandParameter="{Binding Match}">
+              <Border Classes="pick" Width="236">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Title}" Classes="kicker" />
+                  <c:Ticker Value="{Binding Value}" Classes="pickValue" />
+                  <TextBlock Text="{Binding Detail}" Classes="note" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- tips -->
+      <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasMatch}">
+        <Label Classes="section" Content="WORK ON THIS" />
+        <Button Grid.Column="1" Classes="ghost" Content="Full scouting report" Command="{Binding GoCommand}" CommandParameter="season" VerticalAlignment="Bottom" Margin="14,0,0,12" />
+      </Grid>
+      <ItemsControl ItemsSource="{Binding Tips}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:NoteLine">
+            <Border Classes="note" BorderBrush="{DynamicResource AccentBrush}">
+              <StackPanel Spacing="3">
+                <TextBlock Text="{Binding Label}" Classes="label" Foreground="{DynamicResource AccentBrush}" />
+                <TextBlock Text="{Binding Headline}" Classes="headlineSmall" />
+                <TextBlock Text="{Binding Detail}" Classes="note" FontSize="13" Foreground="{DynamicResource Ink2Brush}" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

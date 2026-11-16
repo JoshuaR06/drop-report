@@ -62,11 +62,18 @@ public sealed partial class SetupViewModel : ViewModelBase
         OnPropertyChanged(nameof(ExtraFolders));
     }
 
+    /// <summary>Offered on the last step: run in the tray from sign-in and show a card after each match.</summary>
+    [ObservableProperty] private bool _runInBackground = true;
+
     [RelayCommand]
     private async Task Import()
     {
         if (Working) return;
         Working = true; Error = "";
+        var st = _main.Settings;
+        st.StartWithWindows = RunInBackground; st.WatchWhileOpen = true; st.PostMatchPopup = RunInBackground; st.Save();
+        Autostart.Set(RunInBackground);
+        _main.SetWatching(true);
         try
         {
             var r = await _main.Library.ScanAsync(new Progress<string>(p => Progress = p), reanalyzeAll: _main.Library.Matches.Count > 0);

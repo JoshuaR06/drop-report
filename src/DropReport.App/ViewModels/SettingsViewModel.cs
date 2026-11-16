@@ -15,6 +15,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _watchWhileOpen;
     [ObservableProperty] private bool _hideNames;
     [ObservableProperty] private bool _lightTheme;
+    [ObservableProperty] private bool _startWithWindows;
+    [ObservableProperty] private bool _closeToTray;
+    [ObservableProperty] private bool _postMatchPopup;
+    [ObservableProperty] private bool _checkForUpdates;
+    [ObservableProperty] private bool _onlineOdds;
+    public string AutostartNote => Autostart.CanRegister ? "Starts quietly in the tray when you sign in to Windows. Turn off any time."
+        : "This is a development build, which can't start with Windows. The installed app can.";
     [ObservableProperty] private string _message = "";
     public ObservableCollection<string> ExtraFolders { get; }
     public string NamesText => _main.Library.Names.IsEmpty ? "Not built: items show internal code names." : $"{_main.Library.Names.ById.Count:N0} items from game version {_main.Library.Names.Build}";
@@ -24,12 +31,19 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         _main = main;
         _replayFolder = S.ReplayFolder; _watchWhileOpen = S.WatchWhileOpen; _hideNames = S.HideNames; _lightTheme = S.Theme == "Light";
+        _startWithWindows = S.StartWithWindows && Autostart.IsOn; _closeToTray = S.CloseToTray; _postMatchPopup = S.PostMatchPopup;
+        _checkForUpdates = S.CheckForUpdates; _onlineOdds = S.OnlineOdds;
         ExtraFolders = new(S.ExtraFolders);
     }
 
     partial void OnReplayFolderChanged(string value) { S.ReplayFolder = value; S.Save(); }
     partial void OnWatchWhileOpenChanged(bool value) { S.WatchWhileOpen = value; S.Save(); _main.SetWatching(value); }
     partial void OnHideNamesChanged(bool value) { S.HideNames = value; S.Save(); }
+    partial void OnStartWithWindowsChanged(bool value) { S.StartWithWindows = value; S.Save(); Autostart.Set(value); }
+    partial void OnCloseToTrayChanged(bool value) { S.CloseToTray = value; S.Save(); }
+    partial void OnPostMatchPopupChanged(bool value) { S.PostMatchPopup = value; S.Save(); }
+    partial void OnCheckForUpdatesChanged(bool value) { S.CheckForUpdates = value; S.Save(); }
+    partial void OnOnlineOddsChanged(bool value) { S.OnlineOdds = value; S.Save(); }
     partial void OnLightThemeChanged(bool value) { S.Theme = value ? "Light" : "Dark"; S.Save(); App.SetTheme(S.Theme); }
 
     public void AddExtraFolder(string path)

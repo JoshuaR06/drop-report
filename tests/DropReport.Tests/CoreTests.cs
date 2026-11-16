@@ -355,3 +355,17 @@ public class TreasureTests
         Assert.False(Insights.EarlyDeath(M(null, new(), new(), death: new DeathInfo(400, "player", "x", "shotgun", 5, false, false))));
     }
 }
+
+public class OddsFileTests
+{
+    [Fact]
+    public void Odds_file_must_be_sane_to_replace_the_built_in_odds()
+    {
+        var built = Treasure.BuiltIn();
+        Assert.False(Treasure.Apply(built with { Season = 42 }));                                      // wrong season
+        Assert.False(Treasure.Apply(built with { Rewards = new() { new("Gold outfit", 10, true, false) } }));   // token must lead
+        Assert.False(Treasure.Apply(built with { Rewards = new() { new(Treasure.Token, 0.5, false, true) } })); // odds > 1
+        Assert.True(Treasure.Apply(built));
+        Assert.Equal(137_500, Treasure.Rewards[0].OneIn);
+    }
+}

@@ -260,6 +260,37 @@
       <Setter Property="LineHeight" Value="48" />
     </Style>
 
+    <!-- "+2.5 vs your usual": green when better, red when worse -->
+    <Style Selector="TextBlock.delta">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.delta.better"><Setter Property="Foreground" Value="{DynamicResource MapOpenedBrush}" /></Style>
+    <Style Selector="TextBlock.delta.worse"><Setter Property="Foreground" Value="{DynamicResource MapKillBrush}" /></Style>
+
+    <!-- form guide squares (last 10 placements) -->
+    <Style Selector="Border.form">
+      <Setter Property="Width" Value="64" />
+      <Setter Property="Height" Value="64" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+    </Style>
+    <Style Selector="Border.form.top10"><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Style>
+    <Style Selector="Border.form.win"><Setter Property="Background" Value="{DynamicResource AccentBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Style>
+    <Style Selector="Border.form TextBlock">
+      <Setter Property="FontFamily" Value="{DynamicResource DisplayFont}" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="FontSize" Value="28" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource Ink2Brush}" />
+    </Style>
+    <Style Selector="Border.form.top10 TextBlock"><Setter Property="Foreground" Value="{DynamicResource InkBrush}" /></Style>
+    <Style Selector="Border.form.win TextBlock"><Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" /></Style>
+
     <!-- strength / weakness / tip notes -->
     <Style Selector="Border.note">
       <Setter Property="Background" Value="{DynamicResource CardBrush}" />

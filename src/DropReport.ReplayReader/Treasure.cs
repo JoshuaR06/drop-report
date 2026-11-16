@@ -22,7 +22,7 @@ public static class Treasure
     /// <summary>The treasure season (Fortnite Treasure Hunters, game version 43).</summary>
     public const int Season = 43;
 
-    public static readonly IReadOnlyList<ChestReward> Rewards = new ChestReward[]
+    public static IReadOnlyList<ChestReward> Rewards { get; private set; } = new ChestReward[]
     {
         new(Token, 137_500, Weekly: false, Boosted: true),
         new("Gold outfit", 1_562_500, Weekly: true, Boosted: false),
@@ -34,10 +34,30 @@ public static class Treasure
     };
 
     /// <summary>The token can be found until the season ends on 5 Dec 2026 (taken as the end of that day, US Eastern).</summary>
-    public static readonly DateTime SeasonEndUtc = new(2026, 12, 6, 5, 0, 0, DateTimeKind.Utc);
+    public static DateTime SeasonEndUtc { get; private set; } = new(2026, 12, 6, 5, 0, 0, DateTimeKind.Utc);
 
     // Saturdays, 2-4 PM and 9-11 PM US Eastern (EST = UTC-5 in November). 7 Nov: 1.5x then 2x (Epic). Later dates: 1.5x as reported.
-    public static readonly IReadOnlyList<BoostSession> Sessions = BuildSessions();
+    public static IReadOnlyList<BoostSession> Sessions { get; private set; } = BuildSessions();
+
+    /// <summary>Where the odds and schedule came from ("built in" or the date of the downloaded file).</summary>
+    public static string Source { get; private set; } = "built in";
+
+    /// <summary>The published odds file (data/treasure.json in the repo): lets odds and Treasure Hours be corrected
+    /// without a new release.</summary>
+    public sealed record Data(int Season, DateTime SeasonEndUtc, List<ChestReward> Rewards, List<BoostSession> Sessions, string Updated);
+
+    /// <summary>Use a downloaded odds file. Ignored unless it is for this season and looks sane (token first, odds > 1).</summary>
+    public static bool Apply(Data d)
+    {
+        if (d == null || d.Season != Season || d.Rewards is not { Count: > 0 } || d.Rewards[0].Name != Token || d.Rewards.Any(r => r.OneIn <= 1)
+            || d.Sessions == null || d.Sessions.Any(s => s.EndUtc <= s.StartUtc || s.Multiplier < 1)) return false;
+        Rewards = d.Rewards; Sessions = d.Sessions.OrderBy(s => s.StartUtc).ToList(); SeasonEndUtc = d.SeasonEndUtc;
+        Source = "updated " + d.Updated;
+        return true;
+    }
+
+    /// <summary>The built-in values as an odds file (what data/treasure.json starts from).</summary>
+    public static Data BuiltIn() => new(Season, SeasonEndUtc, Rewards.ToList(), Sessions.ToList(), "2026-11-16");
 
     private static List<BoostSession> BuildSessions()
     {

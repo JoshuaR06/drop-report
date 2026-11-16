@@ -15,7 +15,7 @@
 
       <Border Classes="rule" />
       <TextBlock Classes="kicker" Text="SAFE BY DESIGN" Margin="0,14,0,8" />
-      <TextBlock Classes="dek" Margin="0,0,0,28" Text="Drop Report only reads files on disk: finished replay files, and (for item names) the game's own data files. It never reads game memory, never injects anything and never touches the running game, which is what anti-cheat watches for. It doesn't need admin rights, doesn't start with Windows, and sends nothing anywhere: no account, no telemetry." />
+      <TextBlock Classes="dek" Margin="0,0,0,28" Text="Drop Report only reads files on disk: finished replay files, and (for item names) the game's own data files. It never reads game memory, never injects anything and never touches the running game, which is what anti-cheat watches for. It doesn't need admin rights, starts with Windows only if you choose, and sends nothing about you anywhere: no account, no telemetry." />
 
       <Border Classes="rule" />
       <TextBlock Classes="kicker" Text="FREE FOREVER" Margin="0,14,0,8" />

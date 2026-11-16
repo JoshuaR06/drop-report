@@ -18,6 +18,9 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     public string Title { get; }
     public string Subtitle { get; }
     public string Dek { get; }
+    /// <summary>Set when the replay's elimination events don't add up to Epic's own count (per-weapon credit may be off).</summary>
+    public string ElimCheck { get; }
+    public bool HasElimCheck => ElimCheck != null;
     public double Duration { get; }
     public List<Tile> Tiles { get; }
     public List<ChestLine> Chests { get; }
@@ -66,6 +69,8 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
         Title = entry.Headline;
         Subtitle = $"{entry.Kicker} · {m.Minutes:0} MIN · GAME V{m.Season}";
         Dek = entry.Dek;
+        if (m.Epic.Elims is int epic && epic != m.Fights.Elims)
+            ElimCheck = $"Epic counted {epic} eliminations; the replay's elimination events credit you with {m.Fights.Elims}. Totals use Epic's number, so the per-weapon split below may be off by {Math.Abs(epic - m.Fights.Elims)}.";
         Duration = Map?.End ?? m.Minutes * 60;
         int team = m.Chests.Team.Sum(t => t.Opened + t.Broken);
         Tiles = new()
@@ -101,4 +106,5 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     [RelayCommand] private void SetSpeed(string s) => Speed = double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
     [RelayCommand] private void Jump(double t) { Playing = false; Time = Math.Max(0, t - 3); }
     [RelayCommand] private void Back() { Playing = false; _main.Back(); }
+    [RelayCommand] private async Task Share() => await _main.ShareAsync(ShareCardViewModel.ForMatch(Summary, _main.Library.Matches, _main.Settings));
 }

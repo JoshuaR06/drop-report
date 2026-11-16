@@ -1,0 +1,111 @@
+{
+  "season": 43,
+  "seasonEndUtc": "2026-12-06T05:00:00Z",
+  "rewards": [
+    {
+      "name": "Pirate Shop Access",
+      "oneIn": 137500,
+      "weekly": false,
+      "boosted": true
+    },
+    {
+      "name": "Gold outfit",
+      "oneIn": 1562500,
+      "weekly": true,
+      "boosted": false
+    },
+    {
+      "name": "Vehicle and decal",
+      "oneIn": 7813,
+      "weekly": true,
+      "boosted": false
+    },
+    {
+      "name": "Pickaxe or back bling",
+      "oneIn": 568,
+      "weekly": true,
+      "boosted": false
+    },
+    {
+      "name": "Jam track",
+      "oneIn": 391,
+      "weekly": true,
+      "boosted": false
+    },
+    {
+      "name": "Loading screen",
+      "oneIn": 272,
+      "weekly": true,
+      "boosted": false
+    },
+    {
+      "name": "Any Gizmo",
+      "oneIn": 127,
+      "weekly": false,
+      "boosted": false
+    }
+  ],
+  "sessions": [
+    {
+      "startUtc": "2026-11-07T19:00:00Z",
+      "endUtc": "2026-11-07T21:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": true
+    },
+    {
+      "startUtc": "2026-11-08T02:00:00Z",
+      "endUtc": "2026-11-08T04:00:00Z",
+      "multiplier": 2,
+      "confirmed": true
+    },
+    {
+      "startUtc": "2026-11-14T19:00:00Z",
+      "endUtc": "2026-11-14T21:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    },
+    {
+      "startUtc": "2026-11-15T02:00:00Z",
+      "endUtc": "2026-11-15T04:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    },
+    {
+      "startUtc": "2026-11-21T19:00:00Z",
+      "endUtc": "2026-11-21T21:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    },
+    {
+      "startUtc": "2026-11-22T02:00:00Z",
+      "endUtc": "2026-11-22T04:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    },
+    {
+      "startUtc": "2026-11-28T19:00:00Z",
+      "endUtc": "2026-11-28T21:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    },
+    {
+      "startUtc": "2026-11-29T02:00:00Z",
+      "endUtc": "2026-11-29T04:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    },
+    {
+      "startUtc": "2026-12-05T19:00:00Z",
+      "endUtc": "2026-12-05T21:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    },
+    {
+      "startUtc": "2026-12-06T02:00:00Z",
+      "endUtc": "2026-12-06T04:00:00Z",
+      "multiplier": 1.5,
+      "confirmed": false
+    }
+  ],
+  "updated": "2026-11-16"
+}

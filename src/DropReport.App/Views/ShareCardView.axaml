@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DropReport.App.ViewModels"
+             xmlns:c="using:DropReport.App.Controls"
+             x:Class="DropReport.App.Views.ShareCardView"
+             x:DataType="vm:ShareCardViewModel"
+             Width="1200" Height="675" Background="{DynamicResource PageBrush}">
+  <!-- 16:9, rendered at 1600x900 for Discord / socials -->
+  <Grid ColumnDefinitions="14,*">
+    <Border Background="{DynamicResource AccentBrush}" />
+    <Panel Grid.Column="1">
+      <c:Stripes />
+      <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Margin="56,44,56,34">
+        <!-- brand row -->
+        <Grid ColumnDefinitions="Auto,Auto,*">
+          <Path Data="{StaticResource BrandMark}" Fill="{DynamicResource AccentBrush}" Width="30" Height="36" Stretch="Uniform" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="{Binding Brand}" FontFamily="{DynamicResource DisplayFont}" FontWeight="Bold" FontSize="34" Margin="12,0,0,0" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding Kicker}" Classes="kicker" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+        <Border Grid.Row="1" Height="3" Background="{DynamicResource AccentBrush}" Margin="0,16,0,0" />
+        <!-- headline + numbers -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="26">
+          <TextBlock Text="{Binding Headline}" FontFamily="{DynamicResource DisplayFont}" FontWeight="Bold" FontSize="84" LineHeight="88" TextWrapping="Wrap" />
+          <ItemsControl ItemsSource="{Binding Stats}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:Tile">
+                <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="2,0,0,0" Padding="20,0,10,0">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Label}" Classes="label" FontSize="15" />
+                    <TextBlock Text="{Binding Value}" FontFamily="{DynamicResource DisplayFont}" FontWeight="Bold" FontSize="92" LineHeight="96" Foreground="{DynamicResource HeroBrush}" />
+                    <TextBlock Text="{Binding Note}" Classes="note" FontSize="16" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+        <!-- records / highlights -->
+        <ItemsControl Grid.Row="3" ItemsSource="{Binding Chips}" IsVisible="{Binding HasChips}" Margin="0,0,0,18">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <Border Background="{DynamicResource AccentBrush}" Padding="16,5" Margin="8,0,16,8">
+                <Border.RenderTransform><SkewTransform AngleX="-12" /></Border.RenderTransform>
+                <TextBlock Text="{Binding}" FontFamily="{DynamicResource DisplayFont}" FontWeight="Bold" FontSize="22" Foreground="{DynamicResource OnAccentBrush}" />
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <!-- footer -->
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+          <TextBlock Text="{Binding Footer}" IsVisible="{Binding HasFooter}" FontFamily="{DynamicResource DisplayFont}" FontWeight="SemiBold" FontSize="22" Foreground="{DynamicResource Ink2Brush}" VerticalAlignment="Bottom" />
+          <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+            <TextBlock Text="Stats from my own replays" Classes="note" FontSize="13" HorizontalAlignment="Right" />
+            <TextBlock Text="{Binding Disclaimer}" Classes="note" FontSize="13" HorizontalAlignment="Right" />
+          </StackPanel>
+        </Grid>
+      </Grid>
+    </Panel>
+  </Grid>
+</UserControl>

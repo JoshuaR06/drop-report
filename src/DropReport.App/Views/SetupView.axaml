@@ -73,6 +73,9 @@
             <Button Classes="ghost" Content="Add a folder" Click="OnAddFolder" />
           </StackPanel>
         </Border>
+        <CheckBox IsChecked="{Binding RunInBackground}">
+          <TextBlock TextWrapping="Wrap" Text="Start with Windows in the tray, read each match the moment it ends, and show a match report card. (Low priority, never during a match; change it any time in Settings.)" />
+        </CheckBox>
         <Button Classes="gold" Content="Import and read my matches" Command="{Binding ImportCommand}" />
         <ProgressBar IsIndeterminate="True" IsVisible="{Binding Working}" Height="3" />
         <TextBlock Text="{Binding Progress}" Classes="sub" />

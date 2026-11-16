@@ -119,6 +119,50 @@ public static class Insights
         return picks;
     }
 
+    // ------------------------------------------------------------------ one match against your usual
+    /// <param name="Better">true = better than usual, false = worse, null = about the same or no history.</param>
+    public sealed record Versus(string Label, string Value, string Delta, bool? Better);
+
+    /// <summary>This match next to your average in the same mode and season (up to the last 30 others; any season if this
+    /// season has fewer than 5). Placement: lower is better.</summary>
+    public static List<Versus> VsUsual(MatchSummary m, IEnumerable<MatchSummary> all)
+    {
+        var sameMode = all.Where(o => o.File != m.File && o.Mode == m.Mode).OrderByDescending(o => o.Start).ToList();
+        var thisSeason = sameMode.Where(o => o.Season == m.Season).ToList();
+        var usual = (thisSeason.Count >= 5 ? thisSeason : sameMode).Take(30).ToList();
+        Versus One(string label, double? mine, IEnumerable<double?> theirs, string fmt, bool lowerBetter = false, double same = 0.1)
+        {
+            var v = theirs.Where(x => x != null).Select(x => x!.Value).ToList();
+            var value = mine == null ? "–" : mine.Value.ToString(fmt);
+            if (mine == null || v.Count < 3) return new(label, value, "", null);
+            var avg = v.Average(); var d = mine.Value - avg;
+            if (Math.Abs(d) <= Math.Max(same, Math.Abs(avg) * 0.08)) return new(label, value, $"your usual ({avg.ToString(fmt == "N0" ? "N0" : "0.#")})", null);
+            var better = lowerBetter ? d < 0 : d > 0;
+            return new(label, value, $"{(d > 0 ? "+" : "−")}{Math.Abs(d).ToString(fmt == "N0" ? "N0" : "0.#")} vs your usual", better);
+        }
+        return new()
+        {
+            One("PLACE", m.Placement, usual.Select(o => (double?)o.Placement), "0", lowerBetter: true, same: 1),
+            One("ELIMINATIONS", m.Epic.Elims, usual.Select(o => (double?)o.Epic.Elims), "0"),
+            One("DAMAGE", m.Epic.DamageToPlayers, usual.Select(o => (double?)o.Epic.DamageToPlayers), "N0", same: 50),
+            One("CHESTS", TeamChests(m), usual.Select(o => (double?)TeamChests(o)), "0", same: 1),
+        };
+    }
+
+    /// <summary>Personal records this match set, against every match before it (any mode).</summary>
+    public static List<string> Records(MatchSummary m, IEnumerable<MatchSummary> all)
+    {
+        var before = all.Where(o => o.File != m.File && (o.Start == null || m.Start == null || o.Start < m.Start)).ToList();
+        var r = new List<string>();
+        if (before.Count < 5) return r;
+        if ((m.Epic.Elims ?? 0) > 0 && (m.Epic.Elims ?? 0) > before.Max(o => o.Epic.Elims ?? 0)) r.Add($"New record: {m.Epic.Elims} eliminations in a match");
+        if ((m.Epic.DamageToPlayers ?? 0) > before.Max(o => o.Epic.DamageToPlayers ?? 0)) r.Add($"New record: {m.Epic.DamageToPlayers:N0} damage in a match");
+        if (TeamChests(m) > before.Max(TeamChests)) r.Add($"New record: {TeamChests(m)} chests in a match");
+        if (m.Placement == 1 && !before.Any(o => o.Placement == 1 && o.Season == m.Season)) r.Add($"First Victory Royale of season {m.Season}");
+        if (m.Fights.ElimsPlayers > 0 && m.Fights.ElimsPlayers > before.Max(o => o.Fights.ElimsPlayers)) r.Add($"New record: {m.Fights.ElimsPlayers} real players eliminated");
+        return r;
+    }
+
     // ------------------------------------------------------------------ strengths and weaknesses
     /// <param name="Kind">strength, weakness or tip</param>
     public sealed record Note(string Kind, string Headline, string Detail);
@@ -134,7 +178,7 @@ public static class Insights
 
         // what wins your fights
         var classes = Classes(ms);
-        if (classes.FirstOrDefault() is { } top && top.Elims + top.Knocks >= 5)
+        if (classes.OrderByDescending(c => c.Elims + c.Knocks).ThenBy(c => c.Class, StringComparer.Ordinal).FirstOrDefault() is { } top && top.Elims + top.Knocks >= 5)
             notes.Add(new Note("strength", $"{Cap(top.Class == "pistol" ? "pistols" : Plural(top.Class))} win your fights",
                 $"{top.Share:P0} of your knocks and eliminations{(top.MedianDist != null ? $", typically at {top.MedianDist:0} m" : "")}."));
 
@@ -151,7 +195,7 @@ public static class Insights
         var deaths = ms.Where(m => m.Death != null).Select(m => m.Death).ToList();
         if (deaths.Count >= 5)
         {
-            var g = deaths.Where(d => !d.Cause.StartsWith("cause ")).GroupBy(d => d.Cause).OrderByDescending(x => x.Count()).First();
+            var g = deaths.Where(d => !d.Cause.StartsWith("cause ")).GroupBy(d => d.Cause).OrderByDescending(x => x.Count()).ThenBy(x => x.Key, StringComparer.Ordinal).First();
             var med = Median(g.Where(d => d.Dist != null).Select(d => d.Dist.Value));
             if (g.Count() >= 3)
                 notes.Add(new Note("weakness", $"{Cap(Plural(g.Key))} end you most",

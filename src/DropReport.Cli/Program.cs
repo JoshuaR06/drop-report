@@ -35,6 +35,13 @@ if (args.Length >= 2 && args[0] == "players")
                           $"streamerName='{p.StreamerModeName}' override='{p.PlayerNameCustomOverride}' platform={p.Platform} botId={(p.BotId != null ? "yes" : "")} owner={p.IsReplayOwner}");
     return 0;
 }
+if (args.Length >= 2 && args[0] == "treasure-json")
+{
+    // the odds file the app downloads (data/treasure.json): start it from the built-in values, then edit dates/odds
+    File.WriteAllText(args[1], JsonSerializer.Serialize(Treasure.BuiltIn(), new JsonSerializerOptions(Json.Options) { WriteIndented = true }));
+    Console.WriteLine($"wrote {args[1]}");
+    return 0;
+}
 if (args.Length >= 1 && args[0] == "insights")
 {
     // what the Treasure Hunt / Weapons / Drop spots pages will say, from the app's saved match summaries
