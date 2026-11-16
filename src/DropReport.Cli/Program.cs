@@ -35,6 +35,39 @@ if (args.Length >= 2 && args[0] == "players")
                           $"streamerName='{p.StreamerModeName}' override='{p.PlayerNameCustomOverride}' platform={p.Platform} botId={(p.BotId != null ? "yes" : "")} owner={p.IsReplayOwner}");
     return 0;
 }
+if (args.Length >= 3 && args[0] == "gizmos")
+{
+    // research: every gizmo the replay owner held (granted gizmos never show as pickups), where it came from,
+    // and the owner's chest searches just before: gizmos <folder> <since>
+    var gz = new System.Text.RegularExpressions.Regex(@"(?i)gizmo|SmugglerExtractionKey|RelicExtractor|RelicFinder|LuckyLocator|FlameCeleb|ExtractionSiteBooster");
+    var rs = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= DateTime.Parse(args[2])).OrderBy(f => f).ToList();
+    int found = 0;
+    foreach (var f in rs)
+    {
+        var r = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
+        try { r.ReadReplay(f); } catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)}: {e.Message}"); continue; }
+        var mine = r.PawnGuidToState.Where(kv => kv.Value == r.RecorderState).Select(kv => kv.Key).ToHashSet();
+        var held = r.PawnWeapons.Where(kv => mine.Contains(kv.Key)).SelectMany(kv => kv.Value)
+            .Select(w => (w.t, w.weapon, cls: r.ActorClass.GetValueOrDefault(w.weapon) ?? r.AllPaths.GetValueOrDefault(w.weapon) ?? "?"))
+            .Where(w => gz.IsMatch(w.cls)).GroupBy(w => w.weapon).Select(g => g.OrderBy(x => x.t).First()).OrderBy(w => w.t).ToList();
+        var picked = r.AllPickups.Where(pk => pk.PickupTarget is uint pt && mine.Contains(pt) && pk.Item != null && gz.IsMatch(pk.Item)).ToList();
+        if (held.Count == 0 && picked.Count == 0) continue;
+        found++;
+        Console.WriteLine($"\n## {Path.GetFileNameWithoutExtension(f)}");
+        foreach (var pk in picked) Console.WriteLine($"   picked up {pk.Item} at {pk.PickedAt:0.0}s{(pk.Tossed ? " (tossed)" : "")}");
+        foreach (var h in held)
+        {
+            var fromPickup = picked.Any(pk => pk.PickedAt <= h.t + 1);
+            Console.WriteLine($"   held {h.cls.Split('/').Last()} first at {h.t:0.0}s  -> {(fromPickup ? "after a pickup" : "NOT picked up: granted")}");
+            foreach (var e in r.Chests.Events.Where(e => mine.Contains(e.Pawn) && e.T <= h.t && e.T >= h.t - 90).OrderByDescending(e => e.T).Take(3))
+                Console.WriteLine($"        my chest before it: {e.Chest} {e.Kind} at {e.T:0.0}s ({h.t - e.T:0.0}s earlier)");
+        }
+        var rev = r.PrizeUpdates.Select(x => x.Actor).Distinct().Count();
+        if (rev > 0) Console.WriteLine($"   treasure reveals in this match: {rev}");
+    }
+    Console.WriteLine($"\n{found} of {rs.Count} matches with a gizmo");
+    return 0;
+}
 if (args.Length >= 4 && args[0] == "scan-paths")
 {
     // research: which replays reference asset paths matching a regex (e.g. chest classes): scan-paths <folder> <since> <regex>
