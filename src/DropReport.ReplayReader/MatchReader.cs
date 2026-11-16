@@ -44,6 +44,39 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     public double? WorldMinusDemo { get; private set; }                      // server world clock minus replay clock
     public float LastTime { get; private set; }
     public IEnumerable<PickupState> AllPickups => _pickups.Values.Concat(_closedPickups);
+    /// <summary>Research only: set before reading to keep every asset path the replay referenced (item definitions,
+    /// actor classes, ...). The parser clears its own cache at the end, so it is copied while reading.</summary>
+    public bool CollectPaths { get; set; }
+    public Dictionary<uint, string> AllPaths { get; } = new();
+    /// <summary>Research: networked class (export group) -> its replicated field names, for groups matching GroupFilter.</summary>
+    public Dictionary<string, HashSet<string>> GroupFields { get; } = new();
+    /// <summary>Research (CollectPaths): every update seen on a treasure-hunt prize chest (time, actor, object).</summary>
+    public List<(float T, uint? Actor, object Update)> PrizeUpdates { get; } = new();
+    public System.Text.RegularExpressions.Regex GroupFilter { get; set; }
+    private int _sinceCopy;
+
+    private void SnapshotGroups()
+    {
+        if (GroupFilter == null) return;
+        const System.Reflection.BindingFlags all = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var cache = typeof(Unreal.Core.ReplayReader<FortniteReplay>).GetField("_netGuidCache", all)?.GetValue(this);
+        foreach (var holder in new[] { cache, (object)this })
+            for (var ty = holder?.GetType(); ty != null; ty = ty.BaseType)
+                foreach (var fld in ty.GetFields(all | System.Reflection.BindingFlags.DeclaredOnly))
+                {
+                    if (fld.GetValue(holder) is not System.Collections.IDictionary dict) continue;
+                    foreach (System.Collections.DictionaryEntry de in dict)
+                    {
+                        if (de.Key is not string key || !GroupFilter.IsMatch(key) || de.Value == null) continue;
+                        var exports = de.Value.GetType().GetProperty("NetFieldExports")?.GetValue(de.Value) as System.Collections.IEnumerable
+                                      ?? de.Value.GetType().GetField("NetFieldExports")?.GetValue(de.Value) as System.Collections.IEnumerable;
+                        var set = GroupFields.TryGetValue(key, out var s) ? s : GroupFields[key] = new();
+                        if (exports == null) continue;
+                        foreach (var ex in exports)
+                            if (ex?.GetType().GetProperty("Name")?.GetValue(ex) is string n) set.Add(n);
+                    }
+                }
+    }
 
     private readonly Dictionary<uint, PickupState> _pickups = new();
     private readonly List<PickupState> _closedPickups = new();
@@ -93,7 +126,14 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     {
         base.OnExportRead(channelIndex, exportGroup);
         if (CurrentTimeSeconds > LastTime) LastTime = CurrentTimeSeconds;
+        if (CollectPaths && ++_sinceCopy >= 500 && GuidPaths.Count != AllPaths.Count)
+        {
+            _sinceCopy = 0;
+            foreach (var kv in GuidPaths) AllPaths[kv.Key] = kv.Value;
+            SnapshotGroups();
+        }
         uint? guid = ChannelToGuid.TryGetValue(channelIndex, out var g) ? g : null;
+        if (CollectPaths && exportGroup is TreasureHuntPrizeChest) PrizeUpdates.Add((CurrentTimeSeconds, guid, exportGroup));
         switch (exportGroup)
         {
             case BaseContainer c:

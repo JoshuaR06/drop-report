@@ -35,6 +35,58 @@ if (args.Length >= 2 && args[0] == "players")
                           $"streamerName='{p.StreamerModeName}' override='{p.PlayerNameCustomOverride}' platform={p.Platform} botId={(p.BotId != null ? "yes" : "")} owner={p.IsReplayOwner}");
     return 0;
 }
+if (args.Length >= 2 && args[0] == "scan-rewards")
+{
+    // research: does anything reward-like (Gizmo items, token, cosmetics, treasure) ever appear in replays?
+    var rx = new System.Text.RegularExpressions.Regex(@"(?i)gizmo|pirate|plunder|shopaccess|treasure|reward|bounty|cosmetic|collectib|lootdrop|bonus|jackpot|token|loadingscreen|jamtrack|musicpack");
+    var groupFields = new Dictionary<string, HashSet<string>>();
+    var paths = new Dictionary<string, int>(); var picks = new Dictionary<string, int>(); var seenIn = new Dictionary<string, HashSet<string>>();
+    var since = args.Length >= 3 ? DateTime.Parse(args[2]) : DateTime.MinValue;
+    var replays = Directory.GetFiles(args[1], "*.replay").Where(f => File.GetLastWriteTime(f) >= since).OrderBy(f => f).ToList();
+    var gtable = ItemTable.Load(Path.Combine(dataRoot, "gamedata", "itemnames.json"));
+    foreach (var f in replays)
+    {
+        try
+        {
+            var reader = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true, GroupFilter = new System.Text.RegularExpressions.Regex(@"(?i)treasurehunt|prize|treasurekey|playtimereward|pirateshop|booty|reward|award|grant|unlock|celebrat|toast|notif|jackpot|gizmo") };
+            reader.ReadReplay(f);
+            foreach (var p in reader.AllPaths.Values.Distinct().Where(p => rx.IsMatch(p))) { paths[p] = paths.GetValueOrDefault(p) + 1; }
+            if (reader.PrizeUpdates.Count > 0)
+            {
+                var mine = reader.PawnGuidToState.Where(kv => kv.Value == reader.RecorderState).Select(kv => kv.Key).ToHashSet();
+                string D(Unreal.Core.Models.DebuggingObject o) => o == null ? "-" :
+                    $"bits={o.TotalBits} fstr=\"{Safe(() => o.FString)}\" name=\"{Safe(() => o.StaticName)}\" int={Safe(() => o.IntValue)} packed={Safe(() => o.IntPacked)} byte={Safe(() => o.ByteValue)} hex={Convert.ToHexString(o.Bytes ?? Array.Empty<byte>())}";
+                static string Safe(Func<object> f) { try { return f()?.ToString(); } catch { return "!"; } }
+                Console.WriteLine($"\n## {Path.GetFileNameWithoutExtension(f)}: {reader.PrizeUpdates.Count(x => x.Update is DropReport.Replay.TreasureHuntPrizeChest)} prize-chest updates on {reader.PrizeUpdates.Where(x => x.Update is DropReport.Replay.TreasureHuntPrizeChest).Select(x => x.Actor).Distinct().Count()} chests");
+                foreach (var (t, actor, upd) in reader.PrizeUpdates.Where(x => x.Update is DropReport.Replay.TreasureHuntPrizeChest).Take(60))
+                {
+                    if (upd is DropReport.Replay.TreasureHuntPrizeChest c)
+                        Console.WriteLine($"  {t,7:0.0} chest#{actor} opener={(c.OpeningPawn is uint op ? (mine.Contains(op) ? "ME" : op.ToString()) : "-")} source={c.SourceContainer?.ToString() ?? "-"} success={c.bSuccess?.ToString() ?? "-"} destroyed={c.bDestroyed?.ToString() ?? "-"}" +
+                                          $"\n          prize: {D(c.PrizeTemplateId)}\n          tier: {D(c.Tier)}  tierData: {D(c.TierData)}  owner: {D(c.OwnerPersistentID)}");
+                }
+            }
+            foreach (var g in reader.GroupFields) { var s = groupFields.TryGetValue(g.Key, out var x) ? x : groupFields[g.Key] = new(); s.UnionWith(g.Value); }
+            foreach (var pk in reader.AllPickups.Where(p => p.Item != null))
+            {
+                var tags = gtable.ById.TryGetValue(pk.Item, out var def) ? string.Join(",", def.Tags ?? new()) : "";
+                if (!rx.IsMatch(pk.Item + " " + tags)) continue;
+                var key = $"{pk.Item}  [{tags}]";
+                picks[key] = picks.GetValueOrDefault(key) + 1;
+                (seenIn.TryGetValue(key, out var s) ? s : seenIn[key] = new()).Add(Path.GetFileNameWithoutExtension(f));
+            }
+            Console.Error.Write(".");
+        }
+        catch (Exception e) { Console.WriteLine($"{Path.GetFileName(f)} failed: {e.Message}"); }
+    }
+    Console.WriteLine($"\n{replays.Count} replays");
+    Console.WriteLine("--- reward-like pickups (items on the ground: chests, floor loot, drops):");
+    foreach (var kv in picks.OrderByDescending(k => k.Value)) Console.WriteLine($"{kv.Value,5}  {kv.Key}  in {seenIn[kv.Key].Count} matches");
+    Console.WriteLine("--- reward-like asset paths (not cosmetics):");
+    foreach (var kv in paths.Where(k => !k.Key.Contains("Cosmetic", StringComparison.OrdinalIgnoreCase) && !k.Key.Contains("/BRCosmetics/")).OrderByDescending(k => k.Value)) Console.WriteLine($"{kv.Value,5}  {kv.Key}");
+    Console.WriteLine("--- networked classes and the fields they replicate:");
+    foreach (var kv in groupFields.OrderBy(k => k.Key)) Console.WriteLine($"  {kv.Key}\n      {string.Join(", ", kv.Value.OrderBy(x => x))}");
+    return 0;
+}
 if (args.Length >= 2 && args[0] == "treasure-json")
 {
     // the odds file the app downloads (data/treasure.json): start it from the built-in values, then edit dates/odds

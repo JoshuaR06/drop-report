@@ -67,7 +67,7 @@ public sealed partial class SeasonViewModel : ViewModelBase, IRefreshable
         Tile Ct(string label, string type) { var a = s.Chest(type, false); var b = s.Chest(type, true); return new Tile(label, Fmt.N(a + b), $"you {a} · team {b}"); }
         Treasure = new()
         {
-            Ct("RARE CHESTS", "Rare Chest"), Ct("SPRITE CHESTS", "Sprite Chest"), Ct("BURIED CHESTS", "Buried chest"), Ct("EXTRACTION CRATES", "Extraction crate"),
+            Ct("RARE CHESTS", "Rare Chest"), Ct("SPRITE CHESTS", "Sprite Chest"), Ct("BURIED CHESTS", "Buried chest"), Ct("DUG-UP TREASURE", "Dug-up treasure chest"), Ct("EXTRACTION CRATES", "Extraction crate"),
             new Tile("VAULT KEYS", Fmt.N(s.SeasonItemCount("vault key")), "picked up"),
             new Tile("MAPS & KEYS", Fmt.N(s.SeasonItemCount("treasure key", "treasure map")), "treasure, picked up"),
             new Tile("SPRITE & EXTRACTION", Fmt.N(s.SeasonItemCount("sprite locator", "extraction")), "items picked up"),

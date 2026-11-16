@@ -85,3 +85,23 @@ to `src/DropReport.ReplayReader`.
 ## Elimination credit follows the knock
 
 Epic's scoreboard credits an elimination to the player who **knocked** the victim, whoever finishes them (a teammate, a bleed-out, the storm, a team wipe). Finishing someone another player knocked earns nothing. Counting the replay's elimination events that way matches Epic's own end-of-match elimination count exactly in 94 of 100 test matches (42 of 45 in season 43); crediting the final blow instead matched only 74. The 6 left are off by one: a knocked player finished out of the replay's view, an elimination missing from the replay, or a special Solo mode with team-wipe events. `FightEvent.Credit` carries the rule; every count (totals, per weapon, players vs bots, records) uses it, while the match timeline still shows who landed the final blow.
+
+## Treasure rewards: what replays show (researched 16 Nov 2026, 45 season-43 matches)
+
+`dropreport scan-rewards <folder> [since]` reads replays with every referenced asset path and every networked class's
+field list captured (the parser clears its own caches at the end of a read, so `MatchReader.CollectPaths` copies them
+while reading).
+
+- **The Pirate Shop token and the weekly rewards leave no trace.** No item, no event, no networked field. The treasure
+  hunt's game-state component (`B_GameState_TreasureHuntController`) and the playtime-rewards player component are in
+  every replay but replicate nothing; `GA_Prizes_EventListener` is an ability that only appears as a name. Rewards are
+  decided and granted on Epic's servers. Odds are the best a replay tool can offer.
+- **Gizmos are not chest drops.** The game has in-match items tagged `Item.Gizmo.*` (Extraction Accelerator, Llama
+  Supply Drop, Spicy Taco, Snack-O'-Lantern), but none was seen as a pickup in 45 matches; at 1 in 127 over ~1,400
+  rolling chests about 11 would be expected. Epic's "any Gizmo" chest reward is account-side too.
+- **Treasure-key prize chests are replicated, barely.** `BGA_DelilahTreasureHuntAnimatedChest` carries
+  `PrizeTemplateId`, `OpeningPawn`, `SourceContainer`, `Tier`, `bSuccess`; it appeared once in 45 matches, and only its
+  destruction was recorded (no prize). Captured by `TreasureHuntPrizeChest` for research runs.
+- **Dug-up treasure chests were not counted before.** The chest you dig up with a Sprite Treasure Map
+  (`B_SpritePosters_Booty_Chest`) has the same searched/searcher fields as a chest; now tracked as "Dug-up treasure
+  chest" (5 in season 43: 3 by the replay owner, 2 by teammates). They count as rolling chests.

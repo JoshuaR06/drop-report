@@ -29,6 +29,7 @@ public static class Rules
         "RelicChest" => "Sprite Chest",
         "BuriedChest" => "Buried chest",
         "ExtractionChest" => "Extraction crate",
+        "SpriteTreasureChest" => "Dug-up treasure chest",
         _ => cls,
     };
 

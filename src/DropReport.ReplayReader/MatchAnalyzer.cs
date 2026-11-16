@@ -9,8 +9,8 @@ namespace DropReport.Analysis;
 public static class MatchAnalyzer
 {
     /// <summary>Bump when the summary gains data: the app re-reads older summaries on its next scan.
-    /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock.</summary>
-    public const int SummaryVersion = 5;
+    /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock. 6 = dug-up treasure chests.</summary>
+    public const int SummaryVersion = 6;
 
     public static MatchResult Analyze(string replayPath, ItemTable names, ILogger logger = null, MapGeo geo = null)
     {

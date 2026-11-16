@@ -1,5 +1,7 @@
 using FortniteReplayReader.Models.NetFieldExports.Items;
 using Unreal.Core.Attributes;
+using Unreal.Core.Contracts;
+using Unreal.Core.Models;
 using Unreal.Core.Models.Enums;
 
 namespace DropReport.Replay;
@@ -35,6 +37,10 @@ public class BuriedChest : TrackedChest { }
 [NetFieldExportGroup("/ExtractionPointGameplay/Gameplay/BGA_ExtractionPointGameplay_Chest.BGA_ExtractionPointGameplay_Chest_C", minimalParseMode: ParseMode.Debug)]
 public class ExtractionChest : TrackedChest { }
 
+/// <summary>Season 43: the chest you dig up with a Sprite Treasure Map (same searched/searcher fields as a chest).</summary>
+[NetFieldExportGroup("/SpritePosters/Blueprints/Items/Booty/B_SpritePosters_Booty_Chest.B_SpritePosters_Booty_Chest_C", minimalParseMode: ParseMode.Debug)]
+public class SpriteTreasureChest : TrackedChest { }
+
 /// <summary>Damage cues with the fields the library skips (hit bone, ADS, hit component).</summary>
 [NetFieldExportGroup("/Script/FortniteGame.FortPawn:NetMulticast_Athena_BatchedDamageCues", minimalParseMode: ParseMode.Minimal)]
 public class TrackedDamageCues : FortniteReplayReader.Models.NetFieldExports.RPC.BatchedDamageCues
@@ -49,4 +55,23 @@ public class TrackedDamageCues : FortniteReplayReader.Models.NetFieldExports.RPC
     public bool? bIsBeam { get; set; }
     [NetFieldExport("HitComponent", RepLayoutCmdType.PropertyObject)]
     public uint? HitComponent { get; set; }
+}
+
+/// <summary>
+/// Research (season 43): the treasure-hunt chest that appears when a chest rolls a prize. Fields captured raw until
+/// their types are known: which prize, who opened it, which chest it came from, the tier, and whether it succeeded.
+/// </summary>
+[NetFieldExportGroup("/DelilahTreasureHuntGameplay/Gameplay/Actors/BGA_DelilahTreasureHuntAnimatedChest.BGA_DelilahTreasureHuntAnimatedChest_C", minimalParseMode: ParseMode.Debug)]
+public class TreasureHuntPrizeChest : INetFieldExportGroup
+{
+    [NetFieldExport("PrizeTemplateId", RepLayoutCmdType.Property)] public DebuggingObject PrizeTemplateId { get; set; }
+    [NetFieldExport("OpeningPawn", RepLayoutCmdType.PropertyObject)] public uint? OpeningPawn { get; set; }
+    [NetFieldExport("SourceContainer", RepLayoutCmdType.PropertyObject)] public uint? SourceContainer { get; set; }
+    [NetFieldExport("Tier", RepLayoutCmdType.Property)] public DebuggingObject Tier { get; set; }
+    [NetFieldExport("TierData", RepLayoutCmdType.Property)] public DebuggingObject TierData { get; set; }
+    [NetFieldExport("bSuccess", RepLayoutCmdType.PropertyBool)] public bool? bSuccess { get; set; }
+    [NetFieldExport("bDestroyed", RepLayoutCmdType.PropertyBool)] public bool? bDestroyed { get; set; }
+    [NetFieldExport("bFromDestruction", RepLayoutCmdType.PropertyBool)] public bool? bFromDestruction { get; set; }
+    [NetFieldExport("bInstantDeath", RepLayoutCmdType.PropertyBool)] public bool? bInstantDeath { get; set; }
+    [NetFieldExport("OwnerPersistentID", RepLayoutCmdType.Property)] public DebuggingObject OwnerPersistentID { get; set; }
 }
