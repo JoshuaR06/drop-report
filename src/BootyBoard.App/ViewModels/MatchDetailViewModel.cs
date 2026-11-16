@@ -17,6 +17,7 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     public MapData Map { get; }
     public string Title { get; }
     public string Subtitle { get; }
+    public string Dek { get; }
     public double Duration { get; }
     public List<Tile> Tiles { get; }
     public List<ChestLine> Chests { get; }
@@ -30,7 +31,7 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     public string MapNote { get; }
 
     private static (string path, DateTime stamp, Avalonia.Media.Imaging.Bitmap bmp, MapGeo geo) _overlay;
-    private static (Avalonia.Media.Imaging.Bitmap, MapGeo) LoadOverlay()
+    internal static (Avalonia.Media.Imaging.Bitmap, MapGeo) LoadOverlay()
     {
         var png = Path.Combine(Services.AppData.GameData, "map.png");
         var info = Path.Combine(Services.AppData.GameData, "mapinfo.json");
@@ -61,16 +62,19 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
         bool hide = main.Settings.HideNames;
         static string Word(string who) => who == "npc" ? "NPC" : who;
         string Nm(string name, string who) => hide || string.IsNullOrEmpty(name) || name == "?" ? Word(who) : name;
-        Title = $"{m.Mode}{(m.Special != null ? " · " + m.Special : "")} · {(m.Placement != null ? "#" + m.Placement : "no placement")}";
-        Subtitle = $"{Fmt.When(m.Start)} · {m.Minutes:0} min · game v{m.Season}";
+        var entry = LogEntry.From(m);
+        Title = entry.Headline;
+        Subtitle = $"{entry.Kicker} · {m.Minutes:0} MIN · GAME V{m.Season}";
+        Dek = entry.Dek;
         Duration = Map?.End ?? m.Minutes * 60;
         int team = m.Chests.Team.Sum(t => t.Opened + t.Broken);
         Tiles = new()
         {
-            new Tile("Chests", (m.Chests.Opened + m.Chests.Broken + team).ToString(), $"you {m.Chests.Opened + m.Chests.Broken} · team {team}"),
-            new Tile("Elims", Fmt.N(m.Epic.Elims), $"{m.Fights.Knocks} knocks"),
-            new Tile("Damage", Fmt.N(m.Epic.DamageToPlayers), "to players (Epic)"),
-            new Tile("Accuracy", m.Epic.Accuracy != null ? Fmt.Pct(m.Epic.Accuracy * 100) : "–", $"{m.Damage.Headshots} headshots"),
+            new Tile("PLACE", entry.Place, m.Placement == 1 ? "Victory Royale" : null),
+            new Tile("ELIMINATIONS", Fmt.N(m.Epic.Elims), $"{m.Fights.Knocks} knocks"),
+            new Tile("DAMAGE", Fmt.N(m.Epic.DamageToPlayers), "to players"),
+            new Tile("ACCURACY", m.Epic.Accuracy != null ? Fmt.Pct(m.Epic.Accuracy * 100) : "–", $"{m.Damage.Headshots} headshots"),
+            new Tile("CHESTS", (m.Chests.Opened + m.Chests.Broken + team).ToString(), $"you {m.Chests.Opened + m.Chests.Broken} · team {team}"),
         };
         var take = new Dictionary<string, string> { ["me"] = "", ["teammate"] = "teammate took", ["other"] = "enemy took", ["nobody"] = "left" };
         Chests = (Map?.Chests ?? new()).Where(c => c.Who == "me" || c.Who == "teammate").Select(c => new ChestLine(c.T, Fmt.Clock(c.T),

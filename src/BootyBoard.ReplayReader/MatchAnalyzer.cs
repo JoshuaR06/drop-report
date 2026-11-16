@@ -8,14 +8,58 @@ namespace BootyBoard.Analysis;
 /// <summary>Reads one replay and produces the match summary + map data. Read-only on the replay file.</summary>
 public static class MatchAnalyzer
 {
-    public const int SummaryVersion = 1;
+    /// <summary>Bump when the summary gains data: the app re-reads older summaries on its next scan.
+    /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3).</summary>
+    public const int SummaryVersion = 4;
 
-    public static MatchResult Analyze(string replayPath, ItemTable names, ILogger logger = null)
+    public static MatchResult Analyze(string replayPath, ItemTable names, ILogger logger = null, MapGeo geo = null)
     {
         names ??= ItemTable.Empty;
         var reader = new MatchReader(logger ?? NullLogger.Instance);
         var replay = reader.ReadReplay(replayPath);
-        return Build(replayPath, replay, reader, names);
+        var res = Build(replayPath, replay, reader, names);
+        if (geo != null && geo.Season == res.Summary.Season && geo.Pois.Count > 0)
+            res = res with { Summary = res.Summary with { Haunt = Haunt(res.Map, geo, res.Summary.BusJump), Landing = Landing(res.Map, geo, res.Summary.BusJump) } };
+        return res;
+    }
+
+    /// <summary>The named location my track spent the most samples within 250 m of (after the bus), or null.</summary>
+    public static string Haunt(MapData map, MapGeo geo, double after)
+    {
+        var counts = new Dictionary<string, int>();
+        foreach (var t in map.Tracks.Where(t => t.Role == 0))
+            for (var i = 0; i < t.T.Length; i++)
+            {
+                if (t.T[i] < after + 30) continue;   // skip the bus and the glide
+                var best = geo.Pois.Select(p => (p.Name, d: Math.Pow(p.X - t.X[i], 2) + Math.Pow(p.Y - t.Y[i], 2))).OrderBy(p => p.d).First();
+                if (best.d < 25000.0 * 25000.0) counts[best.Name] = counts.GetValueOrDefault(best.Name) + 1;
+            }
+        return counts.Count == 0 ? null : counts.OrderByDescending(kv => kv.Value).First().Key;
+    }
+
+    /// <summary>When my track first slows to running pace after the jump (gliding is much faster), or null.</summary>
+    public static (double t, double x, double y)? TouchDown(MapData map, double busJump)
+    {
+        var t = map.Tracks.Where(t => t.Role == 0 && t.T.Length > 2).OrderBy(t => t.T[0]).FirstOrDefault(t => t.T[^1] > busJump + 8);
+        if (t == null) return null;
+        for (var i = 0; i < t.T.Length; i++)
+        {
+            if (t.T[i] < busJump + 8) continue;
+            var j = i; while (j + 1 < t.T.Length && t.T[j] - t.T[i] < 3) j++;   // a 3 s window
+            var dt = t.T[j] - t.T[i];
+            if (dt < 1.5) continue;
+            var speed = Math.Sqrt(Math.Pow(t.X[j] - t.X[i], 2) + Math.Pow(t.Y[j] - t.Y[i], 2)) / dt;   // cm/s
+            if (speed < 750) return (t.T[i], t.X[i], t.Y[i]);
+        }
+        return null;
+    }
+
+    /// <summary>The named location within 300 m of where I touched down, or null (open ground / unknown).</summary>
+    public static string Landing(MapData map, MapGeo geo, double busJump)
+    {
+        if (TouchDown(map, busJump) is not { } td) return null;
+        var best = geo.Pois.Select(p => (p.Name, d: Math.Pow(p.X - td.x, 2) + Math.Pow(p.Y - td.y, 2))).OrderBy(p => p.d).FirstOrDefault();
+        return best.Name != null && best.d < 30000.0 * 30000.0 ? best.Name : null;
     }
 
     private static MatchResult Build(string file, FortniteReplay replay, MatchReader r, ItemTable names)
@@ -40,6 +84,10 @@ public static class MatchAnalyzer
         // ---- chests: my search events with loot, teammates' search events (team modes share chest rewards)
         var used = new HashSet<PickupState>();
         var chestEvents = new List<ChestEvent>();
+        var searchedBefore = new HashSet<uint>();
+        var refill = new HashSet<SearchEvent>(ReferenceEqualityComparer.Instance);
+        foreach (var e in r.Chests.Events.OrderBy(e => e.T))
+            if (e.Guid is uint g && !searchedBefore.Add(g)) refill.Add(e);
         foreach (var e in r.Chests.Events.Where(e => e.Kind != "carried" && Role(e.Pawn) <= 1))
         {
             var mine = Role(e.Pawn) == 0;
@@ -51,12 +99,13 @@ public static class MatchAnalyzer
                 loot = m.Items.Select(p => names.Lookup(p.Item, Who(p.PickupTarget))).ToList();
                 cx = m.Cx; cy = m.Cy;
             }
-            chestEvents.Add(new ChestEvent(Math.Round(e.T, 1), e.Kind, Rules.ChestLabel(e.Chest), mine ? "me" : "teammate", pos?.x, pos?.y, cx, cy, loot));
+            chestEvents.Add(new ChestEvent(Math.Round(e.T, 1), e.Kind, Rules.ChestLabel(e.Chest), mine ? "me" : "teammate", pos?.x, pos?.y, cx, cy, loot, refill.Contains(e)));
         }
         var myChests = chestEvents.Where(c => c.Who == "me" && c.T >= busJump).ToList();
         var teamChests = chestEvents.Where(c => c.Who == "teammate" && c.T >= busJump).ToList();
         static List<ChestTypeCount> ByType(IEnumerable<ChestEvent> ev) => ev.GroupBy(c => c.Chest)
-            .Select(g => new ChestTypeCount(g.Key, g.Count(c => c.Kind == "opened"), g.Count(c => c.Kind == "broken"))).ToList();
+            .Select(g => new ChestTypeCount(g.Key, g.Count(c => c.Kind == "opened"), g.Count(c => c.Kind == "broken"),
+                                            g.Count(c => c.Kind == "opened" && c.Refill), g.Count(c => c.Kind == "broken" && c.Refill))).ToList();
         var taken = myChests.SelectMany(c => c.Loot).Where(l => l.TakenBy == "me").ToList();
         var chests = new ChestStats(myChests.Count(c => c.Kind == "opened"), myChests.Count(c => c.Kind == "broken"), myChests.Sum(c => c.Loot.Count), taken.Count,
             taken.Where(l => l.Kind != "Ammo").Select(l => new TakenItem(l.Name, l.Rarity)).ToList(), ByType(myChests), ByType(teamChests),

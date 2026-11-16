@@ -5,20 +5,20 @@
              x:Class="BootyBoard.App.Views.SetupView"
              x:DataType="vm:SetupViewModel">
   <ScrollViewer>
-    <StackPanel Margin="40,36" Spacing="18" MaxWidth="760" HorizontalAlignment="Left">
+    <StackPanel Margin="48,40" Spacing="18" MaxWidth="780" HorizontalAlignment="Left">
       <!-- 1. welcome -->
       <StackPanel Spacing="16" IsVisible="{Binding StepWelcome}">
         <StackPanel Orientation="Horizontal" Spacing="14">
-          <Image Source="/Assets/bootyboard.png" Width="64" Height="64" />
+          <Path Data="{StaticResource BrandMark}" Fill="{DynamicResource AccentBrush}" Width="44" Height="54" Stretch="Uniform" VerticalAlignment="Center" />
           <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="Ahoy! Welcome to Booty Board" FontSize="28" FontWeight="SemiBold" />
-            <TextBlock Classes="sub" Text="Treasure-season tracking from your own replay files." />
+            <TextBlock Text="Welcome to Drop Report" Classes="display" />
+            <TextBlock Classes="dek" Text="Match stats from your own replay files." />
           </StackPanel>
         </StackPanel>
         <Border Classes="card">
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="HOW IT WORKS" Margin="0" />
-            <TextBlock TextWrapping="Wrap" Text="Your game saves a replay file after every match. Booty Board reads those files (only after the match is over) and builds your stats: chests for you and your team, Rare and Sprite Chests, treasure items, weapons, knocks and eliminations, and a playable map of each match." />
+            <TextBlock TextWrapping="Wrap" Text="Your game saves a replay file after every match. Drop Report reads those files (only after the match is over) and builds your stats: chests for you and your team, this season's special chests and items, weapons, knocks and eliminations, and a playable map of each match." />
             <TextBlock TextWrapping="Wrap" Text="It never touches the running game, never reads game memory and never sends your data anywhere." Classes="sub" />
           </StackPanel>
         </Border>
@@ -27,8 +27,8 @@
 
       <!-- 2. real item names -->
       <StackPanel Spacing="14" IsVisible="{Binding StepNames}">
-        <TextBlock Text="Real item names" FontSize="26" FontWeight="SemiBold" />
-        <TextBlock TextWrapping="Wrap" Text="Replays only contain internal code names (like WID_Assault_Heavy_Recoil_Athena_VR). To show the names you see in game, Booty Board reads the item list from your installed game's own files. That needs three small public downloads for your game version:" />
+        <TextBlock Text="Real item names" Classes="display" />
+        <TextBlock TextWrapping="Wrap" Text="Replays only contain internal code names (like WID_Assault_Heavy_Recoil_Athena_VR). To show the names you see in game, Drop Report reads the item list from your installed game's own files. That needs three small public downloads for your game version:" />
         <Border Classes="card">
           <ItemsControl ItemsSource="{Binding Downloads}">
             <ItemsControl.ItemTemplate>
@@ -36,7 +36,7 @@
                 <Border Classes="rowline">
                   <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
-                      <TextBlock Text="{Binding What}" />
+                      <TextBlock Text="{Binding What}" Classes="rowname" FontSize="17" />
                       <TextBlock Text="{Binding Source}" Classes="muted" />
                     </StackPanel>
                     <TextBlock Grid.Column="1" Text="{Binding ApproxSize}" Classes="sub" VerticalAlignment="Center" />
@@ -59,8 +59,8 @@
 
       <!-- 3. import -->
       <StackPanel Spacing="14" IsVisible="{Binding StepImport}">
-        <TextBlock Text="Import your matches" FontSize="26" FontWeight="SemiBold" />
-        <TextBlock TextWrapping="Wrap" Text="Fortnite keeps only your last 100 replays. Booty Board saves a copy of each one so your history isn't lost, then reads them (about a second per match, at low priority)." />
+        <TextBlock Text="Import your matches" Classes="display" />
+        <TextBlock TextWrapping="Wrap" Text="Fortnite keeps only your last 100 replays. Drop Report saves a copy of each one so your history isn't lost, then reads them (about a second per match, at low priority)." />
         <Border Classes="card">
           <StackPanel Spacing="8">
             <TextBlock Text="{Binding ReplayFolderText}" TextWrapping="Wrap" />

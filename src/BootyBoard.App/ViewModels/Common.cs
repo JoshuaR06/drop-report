@@ -29,6 +29,19 @@ public static class Fmt
     public static string Clock(double s) { s = Math.Max(0, s); return $"{(int)(s / 60)}:{(int)(s % 60):00}"; }
 }
 
+/// <summary>Rarity word -> rarity brush, or the accent when there is no rarity (pick cards, spots).</summary>
+public sealed class RarityOrAccentConverter : IValueConverter
+{
+    public static readonly RarityOrAccentConverter Instance = new();
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is string r) return RarityBrushConverter.Brush(r);
+        var app = Application.Current;
+        return app != null && app.TryGetResource("AccentBrush", app.ActualThemeVariant, out var b) && b is IBrush br ? br : Brushes.Orange;
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 /// <summary>Rarity word -> the theme's rarity brush.</summary>
 public sealed class RarityBrushConverter : IValueConverter
 {

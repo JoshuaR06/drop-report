@@ -123,6 +123,33 @@ public class RulesTests
     }
 }
 
+public class HeadlineTests
+{
+    private static MatchSummary M(int? place, int elims, int chests, string haunt = null, DeathInfo death = null) => new(
+        1, "f", null, "b", 43, "p", "Duo", null, place, 18.6, 60, null,
+        new EpicStats(elims, 0, 0.3, 1000, 100, 0, 0),
+        new ChestStats(chests, 0, 0, 0, new(), new(), new(), 0), new(), new DamageStats(0, 0, 0, 0, 0, new()),
+        new FightStats(2, elims, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, elims, new(), new(), new()), death, haunt);
+
+    [Fact]
+    public void Headlines_pick_the_story()
+    {
+        Assert.Equal("Victory Royale at Loguetown", Headlines.For(M(1, 3, 10, "Loguetown")).Headline);
+        Assert.Equal("Twelve down at Plunder Port", Headlines.For(M(3, 12, 10, "Plunder Port")).Headline);
+        Assert.Equal("31 chests opened", Headlines.For(M(9, 2, 31)).Headline);
+        Assert.Equal("2nd place", Headlines.For(M(2, 1, 5)).Headline);
+        Assert.Equal("14th place after 19 minutes", Headlines.For(M(14, 1, 5)).Headline);
+        Assert.Equal("Picked off from 162 m", Headlines.For(M(20, 1, 5, death: new DeathInfo(900, "player", "x", "pistol", 162, true, false))).Headline);
+    }
+
+    [Fact]
+    public void Dek_reads_like_a_sentence()
+    {
+        var d = Headlines.For(M(3, 7, 17, death: new DeathInfo(900, "player", "x", "shotgun", 5, true, false))).Dek;
+        Assert.Equal("Seven eliminations, two knocks, 17 chests for the team. Went down to a shotgun from 5 m.", d);
+    }
+}
+
 public class MapGeoTests
 {
     [Fact]
@@ -260,5 +287,71 @@ public class FightAnalyzerTests
         var s = FightAnalyzer.Summarize(f, 0);
         Assert.Equal(2, s.Deaths.Count);
         Assert.Equal(0, s.Knocks + s.Elims);
+    }
+}
+
+public class TreasureTests
+{
+    private static MatchSummary M(DateTime? start, List<ChestTypeCount> mine, List<ChestTypeCount> team, int? place = 5, string landing = null,
+                                  DeathInfo death = null, double busJump = 60) => new(
+        2, "f", start, "b", 43, "p", "Duo", null, place, 18.6, busJump, null,
+        new EpicStats(3, 0, 0.3, 1000, 100, 0, 0),
+        new ChestStats(mine.Sum(c => c.Opened), mine.Sum(c => c.Broken), 0, 0, new(), mine, team, 1), new(), new DamageStats(0, 0, 0, 0, 0, new()),
+        new FightStats(2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, new(), new(), new()), death, null, landing);
+
+    [Fact]
+    public void Counting_rules_change_what_rolls()
+    {
+        var m = M(null, new() { new("Chest", 10, 2, OpenedRefill: 1, BrokenRefill: 1), new("Extraction crate", 4, 0) }, new() { new("Rare Chest", 5, 0, 1, 0) });
+        Assert.Equal(10 - 1 + 2 - 1 + 5 - 1, Treasure.Eligible(m, CountRule.Default));              // fresh only, broken + team count; crates never
+        Assert.Equal(12 + 5, Treasure.Eligible(m, new CountRule(Refills: true, Broken: true, Team: true)));
+        Assert.Equal(10 - 1, Treasure.Eligible(m, new CountRule(Refills: false, Broken: false, Team: false)));
+    }
+
+    [Fact]
+    public void Odds_match_the_published_math()
+    {
+        var p = 1 / 137_500.0;
+        Assert.Equal(0.0700, Treasure.AtLeastOne(10_000, p), 3);          // 10,000 chests is about 7%
+        Assert.Equal(0.632, Treasure.AtLeastOne(137_500, p), 3);          // one "expected" drop is 63%, not 100%
+        Assert.InRange(Treasure.RollsFor(0.5, p), 95_250, 95_350);   // 50% at about 95,300
+    }
+
+    [Fact]
+    public void Treasure_hours_boost_the_token_only()
+    {
+        var s = Treasure.SessionAt(new DateTime(2026, 11, 8, 2, 30, 0, DateTimeKind.Utc));   // Sat 7 Nov, 9:30 PM ET
+        Assert.Equal(2.0, s.Multiplier);
+        Assert.True(s.Confirmed);
+        Assert.Null(Treasure.SessionAt(new DateTime(2026, 11, 8, 5, 0, 0, DateTimeKind.Utc)));
+        Assert.Equal(1.5, Treasure.SessionAt(new DateTime(2026, 11, 14, 19, 30, 0, DateTimeKind.Utc)).Multiplier);
+        Assert.False(Treasure.Rewards.Single(r => r.Name == "Any Gizmo").Boosted);
+    }
+
+    [Fact]
+    public void Report_projects_at_your_pace()
+    {
+        var now = new DateTime(2026, 11, 16, 12, 0, 0, DateTimeKind.Utc);
+        var start = now.AddDays(-4).ToLocalTime();
+        var ms = new List<MatchSummary> { M(start, new() { new("Chest", 40, 0) }, new()), M(start.AddDays(2), new() { new("Chest", 40, 0) }, new()) };
+        var r = Treasure.Build(ms, CountRule.Default, now);
+        Assert.Equal(80, r.Chests);
+        Assert.Equal(20, r.ChestsPerDay, 1);                                // 80 chests over 4 days
+        Assert.True(r.ProjectedChance > r.TokenChance);
+        Assert.Equal(r.Chests + r.ChestsPerDay * r.DaysLeft, r.ProjectedChests, 6);
+    }
+
+    [Fact]
+    public void Spots_need_enough_drops_to_rank()
+    {
+        var ms = new List<MatchSummary>
+        {
+            M(null, new(), new(), place: 1, landing: "A"),
+            M(null, new(), new(), place: 30, landing: "B"), M(null, new(), new(), place: 20, landing: "B"), M(null, new(), new(), place: 10, landing: "B"),
+        };
+        var picks = Insights.BestSpots(Insights.Spots(ms));
+        Assert.Equal("B", picks.Single(p => p.Title == "Best for placement").Name);   // A won once but has only 1 drop
+        Assert.True(Insights.EarlyDeath(M(null, new(), new(), death: new DeathInfo(200, "player", "x", "shotgun", 5, false, false))));
+        Assert.False(Insights.EarlyDeath(M(null, new(), new(), death: new DeathInfo(400, "player", "x", "shotgun", 5, false, false))));
     }
 }

@@ -4,29 +4,33 @@
              xmlns:c="using:BootyBoard.App.Controls"
              x:Class="BootyBoard.App.Views.MatchDetailView"
              x:DataType="vm:MatchDetailViewModel">
-  <Grid Margin="24,20,24,20" RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,16,380">
-    <Grid Grid.ColumnSpan="3" ColumnDefinitions="Auto,*" Margin="0,0,0,14">
-      <Button Classes="ghost" Command="{Binding BackCommand}" Margin="0,0,14,0" VerticalAlignment="Center">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-          <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE72B;" VerticalAlignment="Center" />
-          <TextBlock Text="Matches" />
-        </StackPanel>
-      </Button>
-      <StackPanel Grid.Column="1">
-        <TextBlock Classes="h1" Text="{Binding Title}" />
-        <TextBlock Classes="sub" Text="{Binding Subtitle}" />
-      </StackPanel>
-    </Grid>
+  <Grid Margin="40,28,40,24" RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,28,380">
+    <!-- header: dateline, headline, dek -->
+    <StackPanel Grid.ColumnSpan="3" Margin="0,0,0,16">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+        <TextBlock Text="{Binding Subtitle}" Classes="kicker" VerticalAlignment="Bottom" />
+        <Button Grid.Column="1" Classes="ghost" Command="{Binding BackCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE72B;" VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Text="Match Log" />
+          </StackPanel>
+        </Button>
+      </Grid>
+      <Border Classes="goldrule" />
+      <TextBlock Text="{Binding Title}" Classes="display" Margin="0,16,0,4" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding Dek}" Classes="dek" MaxWidth="900" HorizontalAlignment="Left" />
+    </StackPanel>
 
-    <ItemsControl Grid.Row="1" Grid.ColumnSpan="3" ItemsSource="{Binding Tiles}" Margin="0,0,0,4">
+    <!-- scoreboard strip -->
+    <ItemsControl Grid.Row="1" Grid.ColumnSpan="3" ItemsSource="{Binding Tiles}" Margin="0,0,0,18">
       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:Tile">
-          <Border Classes="card" Width="180" Margin="0,0,12,12" Padding="14,10">
-            <StackPanel>
-              <TextBlock Text="{Binding Label}" Classes="sub" FontSize="13" />
-              <TextBlock Text="{Binding Value}" FontSize="24" FontWeight="SemiBold" />
-              <TextBlock Text="{Binding Note}" Classes="muted" />
+          <Border Classes="cell" Width="182">
+            <StackPanel Spacing="2">
+              <TextBlock Text="{Binding Label}" Classes="label" />
+              <TextBlock Text="{Binding Value}" Classes="stat" />
+              <TextBlock Text="{Binding Note}" Classes="note" IsVisible="{Binding Note, Converter={x:Static ObjectConverters.IsNotNull}}" />
             </StackPanel>
           </Border>
         </DataTemplate>
@@ -34,7 +38,7 @@
     </ItemsControl>
 
     <!-- map -->
-    <Border Grid.Row="2" Classes="card" Padding="0" ClipToBounds="True">
+    <Border Grid.Row="2" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="{DynamicResource CardBrush}" ClipToBounds="True">
       <DockPanel>
         <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10">
           <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
@@ -45,7 +49,7 @@
               <Button Classes="ghost" Content="16x" Command="{Binding SetSpeedCommand}" CommandParameter="16" />
             </StackPanel>
             <Slider Grid.Column="2" Minimum="0" Maximum="{Binding Duration}" Value="{Binding Time}" VerticalAlignment="Center" Margin="6,0" />
-            <TextBlock Grid.Column="3" Text="{Binding ClockText}" VerticalAlignment="Center" Margin="10,0" MinWidth="90" />
+            <TextBlock Grid.Column="3" Text="{Binding ClockText}" Classes="cellnum" Foreground="{DynamicResource InkBrush}" Margin="10,0" MinWidth="90" />
             <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6">
               <ToggleButton Classes="ghost" Content="Follow me" IsChecked="{Binding Follow}" />
               <Button Classes="ghost" Content="Fit" Click="OnFit" />
@@ -56,7 +60,7 @@
           <c:MapView x:Name="Map" Map="{Binding Map}" Time="{Binding Time}" Follow="{Binding Follow}" MapImage="{Binding MapImage}" Geo="{Binding Geo}" />
           <TextBlock Text="{Binding MapNote}" Classes="muted" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12" />
           <TextBlock Text="No map data for this match" IsVisible="{Binding !HasMap}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted" />
-          <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="10,6" CornerRadius="8" Background="{DynamicResource Card2Brush}" Opacity="0.92">
+          <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="10,6" CornerRadius="2" Background="{DynamicResource NavBrush}" Opacity="0.92">
             <StackPanel Orientation="Horizontal" Spacing="12">
               <StackPanel Orientation="Horizontal" Spacing="5"><Ellipse Width="9" Height="9" Fill="{DynamicResource MapMeBrush}" /><TextBlock Text="you" Classes="muted" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="5"><Ellipse Width="9" Height="9" Fill="{DynamicResource MapMateBrush}" /><TextBlock Text="team" Classes="muted" /></StackPanel>
@@ -70,88 +74,88 @@
       </DockPanel>
     </Border>
 
-    <!-- side panels -->
+    <!-- side column: the match, told three ways -->
     <ScrollViewer Grid.Row="2" Grid.Column="2">
-      <StackPanel Spacing="14">
-        <Border Classes="card">
-          <StackPanel>
-            <TextBlock Classes="h2" Text="KNOCKS &amp; ELIMS" />
-            <ItemsControl ItemsSource="{Binding Fights}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:FightLine">
-                  <Button Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="6,5"
-                          Command="{Binding $parent[UserControl].((vm:MatchDetailViewModel)DataContext).JumpCommand}" CommandParameter="{Binding T}">
-                    <Grid ColumnDefinitions="48,*">
-                      <TextBlock Text="{Binding Time}" Classes="muted" VerticalAlignment="Top" Margin="0,2,0,0" />
-                      <StackPanel Grid.Column="1">
-                        <TextBlock Text="{Binding Text}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Detail}" Classes="muted" TextWrapping="Wrap" />
-                      </StackPanel>
-                    </Grid>
-                  </Button>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </Border>
-        <Border Classes="card">
-          <StackPanel>
-            <TextBlock Classes="h2" Text="DAMAGE BY WEAPON" />
-            <ItemsControl ItemsSource="{Binding Damage}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:DamageLine">
-                  <Border Classes="rowline">
-                    <Grid ColumnDefinitions="*,46,46,56">
-                      <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                          <Border Classes="swatch" Background="{Binding Rarity, Converter={x:Static vm:RarityBrushConverter.Instance}}" />
-                          <TextBlock Text="{Binding Weapon}" TextWrapping="Wrap" MaxWidth="170" />
-                        </StackPanel>
-                        <TextBlock Text="{Binding Detail}" Classes="muted" Margin="18,0,0,0" />
-                      </StackPanel>
-                      <TextBlock Grid.Column="1" Text="{Binding Hits}" Classes="num" />
-                      <TextBlock Grid.Column="2" Text="{Binding Hs}" Classes="num" />
-                      <TextBlock Grid.Column="3" Text="{Binding Damage}" Classes="num" FontWeight="SemiBold" />
-                    </Grid>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <TextBlock Text="{Binding DamageNote}" Classes="muted" TextWrapping="Wrap" Margin="0,8,0,0" />
-          </StackPanel>
-        </Border>
-        <Border Classes="card">
-          <StackPanel>
-            <TextBlock Classes="h2" Text="CHESTS &amp; LOOT" />
-            <ItemsControl ItemsSource="{Binding Chests}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:ChestLine">
-                  <Button Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="6,5"
-                          Command="{Binding $parent[UserControl].((vm:MatchDetailViewModel)DataContext).JumpCommand}" CommandParameter="{Binding T}">
+      <StackPanel Margin="0,0,10,0">
+        <Border Classes="rule" />
+        <TextBlock Classes="kicker" Text="KNOCKS AND ELIMINATIONS" Margin="0,12,0,6" />
+        <ItemsControl ItemsSource="{Binding Fights}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:FightLine">
+              <Button Classes="link" Padding="4,7"
+                      Command="{Binding $parent[UserControl].((vm:MatchDetailViewModel)DataContext).JumpCommand}" CommandParameter="{Binding T}">
+                <Grid ColumnDefinitions="52,*">
+                  <TextBlock Text="{Binding Time}" Classes="cellnum" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Text}" Classes="rowname" FontSize="17" />
+                    <TextBlock Text="{Binding Detail}" Classes="note" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Border Classes="rule" Margin="0,18,0,0" />
+        <TextBlock Classes="kicker" Text="DAMAGE BY WEAPON" Margin="0,12,0,4" />
+        <Grid ColumnDefinitions="*,46,46,60" Margin="0,0,0,4">
+          <TextBlock Classes="label num" Grid.Column="1" Text="HITS" />
+          <TextBlock Classes="label num" Grid.Column="2" Text="HS" />
+          <TextBlock Classes="label num" Grid.Column="3" Text="DMG" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Damage}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DamageLine">
+              <Border Classes="rowline">
+                <Grid ColumnDefinitions="*,46,46,60">
+                  <StackPanel Orientation="Horizontal">
+                    <Border Classes="rarity" Background="{Binding Rarity, Converter={x:Static vm:RarityBrushConverter.Instance}}" />
                     <StackPanel>
-                      <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding Time}" Classes="muted" />
-                        <TextBlock Text="{Binding What}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Who}" Classes="muted" />
-                      </StackPanel>
-                      <ItemsControl ItemsSource="{Binding Loot}" Margin="18,2,0,0">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:LootLine">
-                            <StackPanel Orientation="Horizontal">
-                              <Border Classes="swatch" Width="8" Height="8" Background="{Binding Rarity, Converter={x:Static vm:RarityBrushConverter.Instance}}" />
-                              <TextBlock Text="{Binding Name}" FontSize="12" />
-                              <TextBlock Text="{Binding Taken}" Classes="muted" Margin="6,0,0,0" />
-                            </StackPanel>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
+                      <TextBlock Text="{Binding Weapon}" Classes="rowname" FontSize="16" MaxWidth="160" />
+                      <TextBlock Text="{Binding Detail}" Classes="note" />
                     </StackPanel>
-                  </Button>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </Border>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding Hits}" Classes="cellnum" FontSize="16" />
+                  <TextBlock Grid.Column="2" Text="{Binding Hs}" Classes="cellnum" FontSize="16" />
+                  <TextBlock Grid.Column="3" Text="{Binding Damage}" Classes="cellnum lead" FontSize="16" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="{Binding DamageNote}" Classes="note" Margin="0,8,0,0" />
+
+        <Border Classes="rule" Margin="0,18,0,0" />
+        <TextBlock Classes="kicker" Text="CHESTS AND LOOT" Margin="0,12,0,6" />
+        <ItemsControl ItemsSource="{Binding Chests}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ChestLine">
+              <Button Classes="link" Padding="4,6"
+                      Command="{Binding $parent[UserControl].((vm:MatchDetailViewModel)DataContext).JumpCommand}" CommandParameter="{Binding T}">
+                <Grid ColumnDefinitions="52,*">
+                  <TextBlock Text="{Binding Time}" Classes="cellnum" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                  <StackPanel Grid.Column="1">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding What}" Classes="rowname" FontSize="16" />
+                      <TextBlock Text="{Binding Who}" Classes="note" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Loot}" Margin="0,2,0,0">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:LootLine">
+                          <StackPanel Orientation="Horizontal">
+                            <Border Classes="rarity" Width="3" Height="12" Margin="0,0,8,0" Background="{Binding Rarity, Converter={x:Static vm:RarityBrushConverter.Instance}}" />
+                            <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{DynamicResource Ink2Brush}" />
+                            <TextBlock Text="{Binding Taken}" Classes="muted" Margin="6,0,0,0" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Grid>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
       </StackPanel>
     </ScrollViewer>
   </Grid>

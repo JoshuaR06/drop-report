@@ -19,11 +19,11 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var vm = new MainViewModel();
+            var a = Program.Args;
             RequestedThemeVariant = vm.Settings.Theme == "Light" ? ThemeVariant.Light : ThemeVariant.Dark;
             var win = new MainWindow { DataContext = vm };
             desktop.MainWindow = win;
 
-            var a = Program.Args;
             // --scan: one archive + analyze pass, log the result, exit (tests the watcher path without clicking)
             if (a.Contains("--scan"))
             {
@@ -42,7 +42,14 @@ public partial class App : Application
                 win.Opened += async (_, _) =>
                 {
                     vm.Navigate(a[i + 1]);
-                    await Task.Delay(1500);
+                    await Task.Delay(400);
+                    // "@900": scroll the page down 900 px first (to check the lower sections)
+                    var scroll = a.FirstOrDefault(x => x.StartsWith('@'));
+                    if (scroll != null && double.TryParse(scroll[1..], out var y))
+                        foreach (var sv in Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(win).OfType<ScrollViewer>()
+                                     .OrderByDescending(s => s.Extent.Height).Take(1))   // the page, not the nav list
+                            sv.Offset = new Vector(0, y);
+                    await Task.Delay(1100);
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         var size = new PixelSize((int)win.Bounds.Width, (int)win.Bounds.Height);

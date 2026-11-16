@@ -76,10 +76,11 @@ public sealed class Library
         if (archived > 0) { AppData.Log($"archived {archived} replays"); progress?.Report($"Saved {archived} new replays"); }
 
         // 2) analyze archived replays without a summary (newest first); pause as soon as a match starts
+        var stale = Matches.Where(m => m.Version < MatchAnalyzer.SummaryVersion).Select(m => Path.GetFileNameWithoutExtension(m.File)).ToHashSet();
         var todo = Directory.GetFiles(AppData.Archive, "*.replay").OrderByDescending(File.GetLastWriteTime).Where(f =>
         {
             var b = Path.GetFileNameWithoutExtension(f);
-            return reanalyzeAll || !File.Exists(Path.Combine(AppData.Matches, b + ".summary.json")) && !File.Exists(Path.Combine(AppData.Matches, b + ".failed"));
+            return reanalyzeAll || stale.Contains(b) || !File.Exists(Path.Combine(AppData.Matches, b + ".summary.json")) && !File.Exists(Path.Combine(AppData.Matches, b + ".failed"));
         }).ToList();
         for (var i = 0; i < todo.Count; i++)
         {
@@ -89,7 +90,7 @@ public sealed class Library
             progress?.Report($"Reading match {i + 1} of {todo.Count}...");
             try
             {
-                var res = MatchAnalyzer.Analyze(f, Names);
+                var res = MatchAnalyzer.Analyze(f, Names, geo: MapGeo.Load(Path.Combine(AppData.GameData, "mapinfo.json")));
                 File.WriteAllText(Path.Combine(AppData.Matches, b + ".map.json"), JsonSerializer.Serialize(res.Map, Json.Options));
                 File.WriteAllText(Path.Combine(AppData.Matches, b + ".summary.json"), JsonSerializer.Serialize(res.Summary, Json.Options));
                 File.Delete(Path.Combine(AppData.Matches, b + ".failed"));

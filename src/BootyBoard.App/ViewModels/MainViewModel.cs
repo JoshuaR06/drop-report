@@ -6,7 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace BootyBoard.App.ViewModels;
 
-public sealed record NavItem(string Key, string Title, string Glyph);
+public sealed record NavItem(string Key, string Title, string Sub);
 
 /// <summary>Season + mode filter shared by the stats pages.</summary>
 public sealed partial class FilterState : ObservableObject
@@ -42,8 +42,10 @@ public sealed partial class MainViewModel : ViewModelBase
     public FilterState Filter { get; } = new();
     public ObservableCollection<NavItem> Nav { get; } = new()
     {
-        new("season", "Season", ""), new("matches", "Matches", ""), new("weapons", "Weapons", ""),
-        new("loot", "Loot & treasure", ""), new("settings", "Settings", ""), new("about", "About", ""),
+        new("season", "The Season", "Your season at a glance"), new("treasure", "Treasure Hunt", "Token odds and chest rewards"),
+        new("weapons", "Weapons", "What you're best with"), new("spots", "Drop Spots", "Where to land"),
+        new("matches", "Match Log", "Every match, replayable"),
+        new("settings", "Settings", "Folders, theme, privacy"), new("about", "About", "Safety, credits, support"),
     };
 
     [ObservableProperty] private NavItem _selectedNav;
@@ -74,7 +76,7 @@ public sealed partial class MainViewModel : ViewModelBase
             _pages[value.Key] = page = value.Key switch
             {
                 "season" => new SeasonViewModel(this), "matches" => new MatchesViewModel(this), "weapons" => new WeaponsViewModel(this),
-                "loot" => new LootViewModel(this), "settings" => new SettingsViewModel(this), _ => new AboutViewModel(),
+                "treasure" => new TreasureViewModel(this), "spots" => new SpotsViewModel(this), "settings" => new SettingsViewModel(this), _ => new AboutViewModel(),
             };
         CurrentPage = page;
     }
@@ -95,7 +97,7 @@ public sealed partial class MainViewModel : ViewModelBase
     {
         CurrentPage = new MatchDetailViewModel(this, m);
 #pragma warning disable MVVMTK0034   // set the field so the nav highlight moves without swapping the page back
-        _selectedNav = Nav[1]; OnPropertyChanged(nameof(SelectedNav));
+        _selectedNav = Nav.First(n => n.Key == "matches"); OnPropertyChanged(nameof(SelectedNav));
 #pragma warning restore MVVMTK0034
     }
     public void Back() => CurrentPage = _pages.GetValueOrDefault("matches") ?? new MatchesViewModel(this);

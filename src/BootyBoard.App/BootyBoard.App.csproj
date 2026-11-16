@@ -8,11 +8,11 @@
     <AssemblyName>BootyBoard</AssemblyName>
     <RootNamespace>BootyBoard.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Assets\bootyboard.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\dropreport.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <Version>0.1.0</Version>
-    <Product>Booty Board</Product>
-    <Description>Treasure-season stats from your own replay files. Not affiliated with Epic Games.</Description>
+    <Product>Drop Report</Product>
+    <Description>Match stats from your own replay files. Not affiliated with Epic Games.</Description>
   </PropertyGroup>
 
   <ItemGroup>

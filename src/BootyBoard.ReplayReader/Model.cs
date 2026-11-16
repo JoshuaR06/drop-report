@@ -10,12 +10,15 @@ public sealed record MatchResult(MatchSummary Summary, MapData Map);
 public sealed record MatchSummary(
     int Version, string File, DateTime? Start, string Branch, int Season, string Playlist, string Mode, string Special,
     int? Placement, double Minutes, double BusJump, string NamesBuild,
-    EpicStats Epic, ChestStats Chests, List<SeasonPickup> PickedUp, DamageStats Damage, FightStats Fights, DeathInfo Death);
+    EpicStats Epic, ChestStats Chests, List<SeasonPickup> PickedUp, DamageStats Damage, FightStats Fights, DeathInfo Death,
+    string Haunt = null,    // the named location you spent the most time near (needs the map data); for headlines
+    string Landing = null); // the named location nearest to where you touched down (null = open ground or no map data)
 
 /// <summary>Epic's own end-of-match numbers (from the replay's stats events).</summary>
 public sealed record EpicStats(int? Elims, int? Assists, double? Accuracy, int? DamageToPlayers, int? DamageTaken, int? DamageToStructures, double? TravelledM);
 
-public sealed record ChestTypeCount(string Type, int Opened, int Broken);
+/// <param name="OpenedRefill">Of Opened, searches of a chest that had already been searched this match (chests refill over time).</param>
+public sealed record ChestTypeCount(string Type, int Opened, int Broken, int OpenedRefill = 0, int BrokenRefill = 0);
 public sealed record TakenItem(string Name, string Rarity);
 
 /// <param name="Team">Teammates' chests (team modes share chest rewards). Only what my client saw: a minimum.</param>
@@ -49,7 +52,8 @@ public sealed record MapData(double End, List<Track> Tracks, List<ChestEvent> Ch
 public sealed record Track(uint Id, int Role, float[] T, float[] X, float[] Y);
 
 /// <param name="Who">me or teammate.</param>
-public sealed record ChestEvent(double T, string Kind, string Chest, string Who, double? X, double? Y, double? Cx, double? Cy, List<LootItem> Loot);
+/// <param name="Refill">This chest had already been searched earlier in the match (by anyone the replay saw).</param>
+public sealed record ChestEvent(double T, string Kind, string Chest, string Who, double? X, double? Y, double? Cx, double? Cy, List<LootItem> Loot, bool Refill = false);
 
 public sealed record KillMark(double T, double X, double Y, bool Down, bool ByMe, bool MeDied, string Victim);
 

@@ -12,7 +12,7 @@ public sealed partial class SetupViewModel : ViewModelBase
     private readonly MainViewModel _main;
     private readonly GameInstall _game = GameInstall.Find();
     public IReadOnlyList<Download> Downloads => GameDataBuilder.Downloads;
-    public string GameText => _game == null ? "Fortnite wasn't found through the Epic Games Launcher. You can still use Booty Board; items will show their internal code names."
+    public string GameText => _game == null ? "Fortnite wasn't found through the Epic Games Launcher. You can still use Drop Report; items will show their internal code names."
                                             : $"Found your game: {_game.Folder} ({_game.Build})";
     public bool GameFound => _game != null;
     public string ReplayFolderText => Directory.Exists(_main.Settings.ReplayFolder)

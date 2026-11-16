@@ -4,88 +4,128 @@
              xmlns:c="using:BootyBoard.App.Controls"
              x:Class="BootyBoard.App.Views.SeasonView"
              x:DataType="vm:SeasonViewModel">
-  <ScrollViewer>
-    <StackPanel Margin="28,24,28,28" Spacing="18" MaxWidth="1240">
-      <Grid ColumnDefinitions="*,Auto">
-        <StackPanel>
-          <TextBlock Classes="h1" Text="Season" />
-          <TextBlock Classes="sub" Text="{Binding Subtitle}" />
+  <UserControl.Resources>
+    <DataTemplate x:Key="StatCell" x:DataType="vm:Tile">
+      <Border Classes="cell" Width="182" Margin="0,0,0,18">
+        <StackPanel Spacing="3">
+          <TextBlock Text="{Binding Label}" Classes="label" />
+          <c:Ticker Value="{Binding Value}" Classes="stat" />
+          <TextBlock Text="{Binding Note}" Classes="note" IsVisible="{Binding Note, Converter={x:Static ObjectConverters.IsNotNull}}" />
         </StackPanel>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <ComboBox ItemsSource="{Binding Main.Filter.Seasons}" SelectedItem="{Binding Main.Filter.Season}" MinWidth="180" />
-          <ComboBox ItemsSource="{Binding Main.Filter.Modes}" SelectedItem="{Binding Main.Filter.Mode}" MinWidth="130" />
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+  <ScrollViewer>
+    <StackPanel Margin="48,34,48,40" MaxWidth="1180">
+      <!-- dateline -->
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+        <TextBlock Text="{Binding Dateline}" Classes="kicker" VerticalAlignment="Bottom" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <ComboBox ItemsSource="{Binding Main.Filter.Seasons}" SelectedItem="{Binding Main.Filter.Season}" MinWidth="176" />
+          <ComboBox ItemsSource="{Binding Main.Filter.Modes}" SelectedItem="{Binding Main.Filter.Mode}" MinWidth="124" />
         </StackPanel>
       </Grid>
+      <Border Classes="goldrule" />
 
-      <Border Classes="card" Padding="22,18">
-        <Grid ColumnDefinitions="Auto,*">
-          <TextBlock Text="{Binding Hero}" FontSize="56" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,22,0" />
-          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
-            <TextBlock Text="TREASURE CHESTS" Classes="h2" Margin="0" Foreground="{DynamicResource AccentBrush}" />
-            <TextBlock Text="{Binding HeroLabel}" Classes="sub" TextWrapping="Wrap" />
+      <!-- hero -->
+      <Panel Margin="0,10,0,6">
+        <c:Stripes />
+        <Grid ColumnDefinitions="Auto,*" Margin="0,14,0,14">
+          <c:Ticker Value="{Binding Hero}" Classes="hero" VerticalAlignment="Center" Margin="0,-10,32,-10" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8" MaxWidth="660" HorizontalAlignment="Left">
+            <TextBlock Text="{Binding HeroHeadline}" Classes="heroHeadline" />
+            <TextBlock Text="{Binding HeroDek}" Classes="dek" />
           </StackPanel>
         </Grid>
-      </Border>
+      </Panel>
 
-      <StackPanel Spacing="8">
-        <TextBlock Classes="h2" Text="TREASURE HUNT" />
-        <ItemsControl ItemsSource="{Binding Treasure}">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:Tile">
-              <Border Classes="card" Width="188" Margin="0,0,12,12" Padding="14,12">
-                <StackPanel Spacing="2">
-                  <TextBlock Text="{Binding Label}" Classes="sub" FontSize="13" />
-                  <TextBlock Text="{Binding Value}" Classes="tileValue" />
-                  <TextBlock Text="{Binding Note}" Classes="muted" IsVisible="{Binding Note, Converter={x:Static ObjectConverters.IsNotNull}}" />
+      <!-- scouting report -->
+      <Label Classes="section" Content="SCOUTING REPORT" IsVisible="{Binding Notes.Count}" />
+      <ItemsControl ItemsSource="{Binding Notes}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:NoteLine">
+            <Panel>
+              <Border Classes="note" BorderBrush="{DynamicResource MapOpenedBrush}" IsVisible="{Binding IsStrength}">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="▲  STRENGTH" Classes="label" Foreground="{DynamicResource MapOpenedBrush}" />
+                  <TextBlock Text="{Binding Headline}" Classes="headlineSmall" />
+                  <TextBlock Text="{Binding Detail}" Classes="note" FontSize="13" Foreground="{DynamicResource Ink2Brush}" />
                 </StackPanel>
               </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <TextBlock Classes="muted" TextWrapping="Wrap" Text="Counted from your replays: chests you and your teammates opened or broke (team modes share chest rewards). A teammate far from you isn't in your replay, so team counts are a minimum. Quest progress and map fragments live on Epic's servers, not in replays." />
-      </StackPanel>
-
-      <StackPanel Spacing="8">
-        <TextBlock Classes="h2" Text="MATCH STATS" />
-        <ItemsControl ItemsSource="{Binding Match}">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:Tile">
-              <Border Classes="card" Width="188" Margin="0,0,12,12" Padding="14,12">
-                <StackPanel Spacing="2">
-                  <TextBlock Text="{Binding Label}" Classes="sub" FontSize="13" />
-                  <TextBlock Text="{Binding Value}" Classes="tileValue" />
-                  <TextBlock Text="{Binding Note}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding Note, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <Border Classes="note" BorderBrush="{DynamicResource MapKillBrush}" IsVisible="{Binding IsWeakness}">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="▼  WEAKNESS" Classes="label" Foreground="{DynamicResource MapKillBrush}" />
+                  <TextBlock Text="{Binding Headline}" Classes="headlineSmall" />
+                  <TextBlock Text="{Binding Detail}" Classes="note" FontSize="13" Foreground="{DynamicResource Ink2Brush}" />
                 </StackPanel>
               </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
+              <Border Classes="note" BorderBrush="{DynamicResource AccentBrush}" IsVisible="{Binding IsTip}">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="◆  TIP" Classes="label" Foreground="{DynamicResource AccentBrush}" />
+                  <TextBlock Text="{Binding Headline}" Classes="headlineSmall" />
+                  <TextBlock Text="{Binding Detail}" Classes="note" FontSize="13" Foreground="{DynamicResource Ink2Brush}" />
+                </StackPanel>
+              </Border>
+            </Panel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
 
-      <Grid ColumnDefinitions="*,16,*">
-        <Border Classes="card">
-          <StackPanel Spacing="6">
-            <TextBlock Classes="h2" Text="CHESTS PER MATCH" Margin="0" />
-            <StackPanel Orientation="Horizontal" Spacing="14">
-              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series1Brush}" Margin="0" /><TextBlock Text="you" Classes="muted" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series2Brush}" Margin="0" /><TextBlock Text="teammates" Classes="muted" /></StackPanel>
-            </StackPanel>
-            <c:ColumnChart Items="{Binding ChestChart}" Height="200" />
+      <!-- record -->
+      <Label Classes="section" Content="YOUR RECORD" />
+      <ItemsControl ItemsSource="{Binding Match}" ItemTemplate="{StaticResource StatCell}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      </ItemsControl>
+
+      <!-- charts -->
+      <Grid ColumnDefinitions="*,40,*" Margin="0,8,0,0">
+        <StackPanel Spacing="8">
+          <TextBlock Text="ELIMINATIONS, MATCH BY MATCH" Classes="kicker" />
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <StackPanel Orientation="Horizontal"><Border Classes="swatch" Background="{DynamicResource Series1Brush}" /><TextBlock Text="players" Classes="muted" /></StackPanel>
+            <StackPanel Orientation="Horizontal"><Border Classes="swatch" Background="{DynamicResource Series2Brush}" /><TextBlock Text="bots and NPCs" Classes="muted" /></StackPanel>
           </StackPanel>
-        </Border>
-        <Border Classes="card" Grid.Column="2">
-          <StackPanel Spacing="6">
-            <TextBlock Classes="h2" Text="ELIMINATIONS PER MATCH" Margin="0" />
-            <StackPanel Orientation="Horizontal" Spacing="14">
-              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series1Brush}" Margin="0" /><TextBlock Text="players" Classes="muted" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="5"><Border Classes="swatch" Background="{DynamicResource Series2Brush}" Margin="0" /><TextBlock Text="bots" Classes="muted" /></StackPanel>
-            </StackPanel>
-            <c:ColumnChart Items="{Binding ElimChart}" Height="200" />
+          <c:ColumnChart Items="{Binding ElimChart}" Height="210" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Spacing="8">
+          <TextBlock Text="CHESTS, MATCH BY MATCH" Classes="kicker" />
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <StackPanel Orientation="Horizontal"><Border Classes="swatch" Background="{DynamicResource Series1Brush}" /><TextBlock Text="you" Classes="muted" /></StackPanel>
+            <StackPanel Orientation="Horizontal"><Border Classes="swatch" Background="{DynamicResource Series2Brush}" /><TextBlock Text="your team" Classes="muted" /></StackPanel>
           </StackPanel>
-        </Border>
+          <c:ColumnChart Items="{Binding ChestChart}" Height="210" />
+        </StackPanel>
       </Grid>
+
+      <!-- this season's chests and items -->
+      <Label Classes="section" Content="THIS SEASON: CHESTS AND TREASURE" />
+      <ItemsControl ItemsSource="{Binding Treasure}" ItemTemplate="{StaticResource StatCell}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      </ItemsControl>
+      <TextBlock Classes="note" MaxWidth="760" HorizontalAlignment="Left"
+                 Text="Counted from your replays: chests you and your teammates opened or broke (team modes share chest rewards). A teammate out of your sight isn't in your replay, so team counts are a minimum. Token odds are on the Treasure Hunt page." />
+
+      <!-- latest matches -->
+      <Grid ColumnDefinitions="*,Auto">
+        <Label Classes="section" Content="LATEST MATCHES" />
+        <Button Grid.Column="1" Classes="ghost" Content="All matches" Command="{Binding AllMatchesCommand}" VerticalAlignment="Bottom" Margin="14,0,0,12" />
+      </Grid>
+      <ItemsControl ItemsSource="{Binding Dispatches}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:LogEntry">
+            <Button Classes="link" Margin="0,4,24,8" Padding="10,12,10,12"
+                    Command="{Binding $parent[UserControl].((vm:SeasonViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}">
+              <StackPanel Spacing="5">
+                <TextBlock Text="{Binding Kicker}" Classes="label" />
+                <TextBlock Text="{Binding Headline}" Classes="headline" />
+                <TextBlock Text="{Binding Dek}" Classes="dek" FontSize="14" />
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
     </StackPanel>
   </ScrollViewer>
 </UserControl>
