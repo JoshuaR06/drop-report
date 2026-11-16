@@ -71,10 +71,10 @@ public sealed partial class MainViewModel : ViewModelBase
         UpdateStatus();
         if (!Settings.SetupDone) CurrentPage = new SetupViewModel(this);
         else SelectedNav = Nav[0];
-        SetWatching(Settings.WatchWhileOpen);
+        SetWatching(Settings.WatchWhileOpen && !Program.IsTool);
         Online.LoadCachedOdds();
         CheckGameVersion();
-        _ = CheckOnlineAsync();
+        if (!Program.IsTool) _ = CheckOnlineAsync();
     }
 
     [RelayCommand] private void DoBanner() { var a = _bannerDo; Banner = null; a?.Invoke(); }

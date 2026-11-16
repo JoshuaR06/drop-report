@@ -12,6 +12,9 @@ internal static class Program
 
     private static Mutex _single;
 
+    /// <summary>A one-shot tool run (--shot, --scan, ...): no watcher, no tray, no single-instance lock.</summary>
+    public static bool IsTool { get; private set; }
+
     [STAThread]
     public static void Main(string[] args)
     {
@@ -19,7 +22,7 @@ internal static class Program
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Services.AppData.Log("crash: " + e.ExceptionObject);
 
         // one Drop Report at a time (tools runs like --shot/--scan are exempt): a second launch wakes the first and exits
-        var tool = args.Any(a => a is "--shot" or "--scan" or "--popup-shot" or "--card-shot");
+        var tool = IsTool = args.Any(a => a is "--shot" or "--scan" or "--popup-shot" or "--card-shot");
         if (!tool)
         {
             _single = new Mutex(true, @"Local\DropReport.Single", out var first);

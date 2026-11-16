@@ -81,3 +81,7 @@ to `src/DropReport.ReplayReader`.
   suffix (_VR...) disagrees with the tag on 72 of 1,768 items, so the tag wins.
 - `WeaponActorClass` links an item to the weapon class the replay shows. One class covers several items (rarities and
   variants); the exact one is my pickup whose id matches, near the time the weapon appeared.
+
+## Elimination credit follows the knock
+
+Epic's scoreboard credits an elimination to the player who **knocked** the victim, whoever finishes them (a teammate, a bleed-out, the storm, a team wipe). Finishing someone another player knocked earns nothing. Counting the replay's elimination events that way matches Epic's own end-of-match elimination count exactly in 94 of 100 test matches (42 of 45 in season 43); crediting the final blow instead matched only 74. The 6 left are off by one: a knocked player finished out of the replay's view, an elimination missing from the replay, or a special Solo mode with team-wipe events. `FightEvent.Credit` carries the rule; every count (totals, per weapon, players vs bots, records) uses it, while the match timeline still shows who landed the final blow.

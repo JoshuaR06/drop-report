@@ -59,7 +59,7 @@ public sealed class SeasonStats
         }
         foreach (var m in ms)
         {
-            foreach (var f in m.Fights.Mine) Add(f.Weapon ?? f.Cause, f.WeaponRarity, m.File, elims: f.Kind == "elim" ? 1 : 0, knocks: f.Kind == "knock" ? 1 : 0);
+            foreach (var f in m.Fights.Mine) Add(f.Weapon ?? f.Cause, f.WeaponRarity, m.File, elims: f.Credit ? 1 : 0, knocks: f.Kind == "knock" ? 1 : 0);
             foreach (var p in m.Damage.PerWeapon.Where(p => p.Hits > 0)) Add(p.Weapon, p.Rarity, m.File, dmg: p.Damage, hits: p.Hits, hs: p.Headshots);
         }
         string Best(HashSet<string> r) => r.OrderByDescending(x => Array.IndexOf(Rules.RarityOrder, x)).FirstOrDefault();

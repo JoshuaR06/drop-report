@@ -33,8 +33,12 @@ public sealed record WeaponDamage(string Weapon, string Rarity, int Hits, int He
 /// <summary>Only hits the replay recorded with detail. Slingshot hits are blank, melee items send none.</summary>
 public sealed record DamageStats(double Recorded, double RecordedToPlayers, int Hits, int Headshots, int BlankHits, List<WeaponDamage> PerWeapon);
 
+/// <param name="Credit">This event earns its "By" an elimination on Epic's scoreboard. Fortnite credits the player who
+/// KNOCKED someone, whoever finishes them: so an elim of someone another player knocked is not credited, and a knock
+/// that someone else finishes is. (Checked against Epic's own count: 94 of 100 matches exact, the rest off by one.)</param>
 public sealed record FightEvent(double T, string Kind, string By, string ByName, string Victim, string VictimName, string Cause, int GunType,
-                                string Weapon, string WeaponRarity, string WeaponFrom, List<string> Tags, double? Dist, string KnockedBy, string Outcome);
+                                string Weapon, string WeaponRarity, string WeaponFrom, List<string> Tags, double? Dist, string KnockedBy, string Outcome,
+                                bool Credit = false);
 
 public sealed record WeaponFights(string Weapon, string Rarity, int Knocks, int Elims);
 

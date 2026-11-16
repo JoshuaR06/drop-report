@@ -251,19 +251,20 @@ public class FightAnalyzerTests
     }
 
     [Fact]
-    public void Epic_count_excludes_other_teams_knocks_and_team_wipes()
+    public void Elim_credit_follows_the_knock()
     {
         var f = Build(new()
         {
-            new(10, "P9", "P1", true, 4), new(12, "ME", "P1", false, 4),     // finished someone else's knock
-            new(20, "ME", "P2", true, 3), new(30, "ME", "P2", false, 50),    // team-wipe credit
-            new(40, "ME", "BOT1", false, 2),
+            new(10, "P9", "P1", true, 4), new(12, "ME", "P1", false, 4),     // I finished someone else's knock: theirs
+            new(20, "ME", "P2", true, 3), new(30, "ME", "P2", false, 50),    // my knock, gone when their team was wiped: mine
+            new(40, "ME", "BOT1", false, 2),                                  // no knock: the finisher's, mine
+            new(50, "ME", "P3", true, 3), new(55, "MATE", "P3", false, 3),   // my knock, my teammate finished: still mine
         });
-        var s = FightAnalyzer.Summarize(f, 1);
+        var s = FightAnalyzer.Summarize(f, 3);
         Assert.Equal(3, s.Elims);
+        Assert.Equal(new[] { false, true, true, true }, s.Mine.Where(x => x.T is 12 or 30 or 40 or 50).OrderBy(x => x.T).Select(x => x.Credit));
         Assert.Equal(1, s.FinishedOtherTeamsKnocks);
         Assert.Equal(1, s.TeamWipeCredits);
-        Assert.Equal(s.EpicElims, s.Elims - s.FinishedOtherTeamsKnocks - s.TeamWipeCredits);
     }
 
     [Fact]

@@ -11,7 +11,8 @@ public sealed record WeaponRef(string Name, string Rarity);
 /// <summary>
 /// Knocks vs elims. Weapon credit, strongest evidence first: my last detailed hit on the victim (&lt;= 5 s before), then
 /// for a bleed-out the weapon that knocked them, then the last non-consumable item I held, else Epic's category.
-/// Epic's own elim count = ours minus finishes of ANOTHER team's knock and minus team-wipe credits (GunType 50).
+/// Elimination credit follows the knock: an elim counts for whoever knocked the victim (or for the finisher when there
+/// was no knock), so finishing someone else's knock earns nothing and a knock someone else finishes still counts.
 /// </summary>
 public static class FightAnalyzer
 {
@@ -39,8 +40,13 @@ public static class FightAnalyzer
                 else if (held(e) is WeaponRef h) { w = h; from = "held"; }
                 if (e.Knocked && w != null) knockWeapon[e.Eliminated ?? ""] = (w, from);
             }
+            // credit: an elim is the finisher's only when nobody else knocked the victim; a knock earns the elim when
+            // someone else finishes it (when the knocker finishes it, the elim event carries the credit instead)
+            var credit = e.Knocked
+                ? next != null && !next.Knocked && who(next.Eliminator) != by
+                : knockedBy == null || knockedBy == by;
             res.Add(new FightEvent(Math.Round(e.T, 1), e.Knocked ? "knock" : "elim", by, name(e.Eliminator), victim, name(e.Eliminated),
-                                   Rules.Cause(e.GunType), e.GunType, w?.Name, w?.Rarity, from, fk.Tags, fk.Dist, knockedBy, outcome));
+                                   Rules.Cause(e.GunType), e.GunType, w?.Name, w?.Rarity, from, fk.Tags, fk.Dist, knockedBy, outcome, credit));
         }
         return res;
     }
@@ -51,15 +57,15 @@ public static class FightAnalyzer
         var deaths = fights.Where(f => f.Victim == "me").ToList();
         int C(Func<FightEvent, bool> p) => mine.Count(p);
         return new FightStats(
-            C(f => f.Kind == "knock"), C(f => f.Kind == "elim"),
-            C(f => f.Kind == "knock" && f.Victim == "player"), C(f => f.Kind == "elim" && f.Victim == "player"),
-            C(f => f.Kind == "knock" && f.Victim is "bot" or "npc"), C(f => f.Kind == "elim" && f.Victim is "bot" or "npc"),   // AI: bots + NPC characters
+            C(f => f.Kind == "knock"), C(f => f.Credit),
+            C(f => f.Kind == "knock" && f.Victim == "player"), C(f => f.Credit && f.Victim == "player"),
+            C(f => f.Kind == "knock" && f.Victim is "bot" or "npc"), C(f => f.Credit && f.Victim is "bot" or "npc"),   // AI: bots + NPC characters
             C(f => f.Kind == "knock" && f.Outcome == "finished by me"), C(f => f.Kind == "knock" && f.Outcome == "finished by teammate"),
             C(f => f.Kind == "knock" && f.Outcome is not ("finished by me" or "finished by teammate")),
             C(f => f.Kind == "elim" && f.KnockedBy == "teammate"), C(f => f.Kind == "elim" && f.KnockedBy == null),
             C(f => f.Kind == "elim" && f.KnockedBy is "player" or "bot" or "npc"), C(f => f.Kind == "elim" && f.GunType == 50),
             epicElims,
-            mine.GroupBy(f => (f.Weapon ?? f.Cause, f.WeaponRarity)).Select(g => new WeaponFights(g.Key.Item1, g.Key.WeaponRarity, g.Count(f => f.Kind == "knock"), g.Count(f => f.Kind == "elim")))
+            mine.GroupBy(f => (f.Weapon ?? f.Cause, f.WeaponRarity)).Select(g => new WeaponFights(g.Key.Item1, g.Key.WeaponRarity, g.Count(f => f.Kind == "knock"), g.Count(f => f.Credit)))
                 .OrderByDescending(g => g.Knocks + g.Elims).ToList(),
             mine, deaths);
     }

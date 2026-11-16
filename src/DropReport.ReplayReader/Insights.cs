@@ -35,7 +35,7 @@ public static class Insights
         {
             var f = mine.Where(x => (x.Weapon ?? x.Cause) == w.Name).ToList();
             var cls = f.GroupBy(x => x.Cause).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
-            return new WeaponScore(w.Name, w.BestRarity, cls, w.Elims, w.Knocks, f.Count(x => x.Kind == "elim" && x.Victim == "player"),
+            return new WeaponScore(w.Name, w.BestRarity, cls, w.Elims, w.Knocks, f.Count(x => x.Credit && x.Victim == "player"),
                 w.Damage, w.Hits, w.Headshots, w.Matches, Median(f.Where(x => x.Dist != null).Select(x => x.Dist.Value)));
         }).ToList();
     }
@@ -69,7 +69,7 @@ public static class Insights
     {
         var f = ms.SelectMany(m => m.Fights.Mine).Where(x => x.Cause is not ("team wiped" or "fall" or "bled out") && !x.Cause.StartsWith("cause ")).ToList();
         var total = Math.Max(1, f.Count);
-        return f.GroupBy(ClassOf).Select(g => new ClassRow(g.Key, g.Count(x => x.Kind == "elim"), g.Count(x => x.Kind == "knock"),
+        return f.GroupBy(ClassOf).Select(g => new ClassRow(g.Key, g.Count(x => x.Credit), g.Count(x => x.Kind == "knock"),
             (double)g.Count() / total, Median(g.Where(x => x.Dist != null).Select(x => x.Dist.Value))))
             .OrderByDescending(c => c.Elims + c.Knocks).ToList();
     }

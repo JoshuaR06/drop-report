@@ -75,8 +75,9 @@ Drop Report only knows what your replay recorded. Being upfront about the limits
 - **Damage totals are partial.** Hits come through in detail for most guns, but slingshot hits arrive blank and melee
   items send none, so recorded damage is usually 50-60% of the game's own total. Headshot rate and per-hit damage are
   reliable. Match totals (eliminations, damage, accuracy) use Epic's own end-of-match numbers.
-- **Per-weapon eliminations can be off by one.** They come from the game's elimination events; in about a quarter of
-  matches those don't add up to Epic's own count (usually by one), and the match page says so when it happens.
+- **Eliminations follow Fortnite's own rule:** the player who knocked someone gets the elimination, whoever finishes
+  them. Counted that way, the replay's elimination events match Epic's own count exactly in 94 of 100 test matches (the
+  rest by one: a fight out of your view, or an unusual mode). The match page says when a match doesn't add up.
 - **Quest progress, XP and map fragments aren't in replays.** They live on the game's servers.
 
 Technical notes on how every number is decoded: [docs/FINDINGS.md](docs/FINDINGS.md).
