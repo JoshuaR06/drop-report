@@ -10,7 +10,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\dropreport.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Product>Drop Report</Product>
     <Description>Match stats from your own replay files. Not affiliated with Epic Games.</Description>
   </PropertyGroup>
