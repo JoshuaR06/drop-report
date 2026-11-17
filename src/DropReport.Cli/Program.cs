@@ -201,6 +201,17 @@ if (args.Length >= 3 && args[0] == "gizmos")
     Console.WriteLine($"\n{found} of {rs.Count} matches with a gizmo");
     return 0;
 }
+if (args.Length >= 4 && args[0] == "paths-near")
+{
+    // research: every asset path first referenced within a window around a moment: paths-near <replay> <seconds> <window> [regex]
+    var r = new DropReport.Replay.MatchReader(Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance) { CollectPaths = true };
+    r.ReadReplay(args[1]);
+    var at = double.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture); var w = double.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture);
+    var rxn = args.Length >= 5 ? new System.Text.RegularExpressions.Regex(args[4], System.Text.RegularExpressions.RegexOptions.IgnoreCase) : null;
+    foreach (var kv in r.PathFirstSeen.Where(kv => Math.Abs(kv.Value - at) <= w && (rxn == null || rxn.IsMatch(kv.Key))).OrderBy(kv => kv.Value))
+        Console.WriteLine($"{kv.Value,7:0.0}s  {kv.Key}");
+    return 0;
+}
 if (args.Length >= 3 && args[0] == "prize-moments")
 {
     // research: when the replay owner earned a treasure (Fortnite references its prize handler ability,

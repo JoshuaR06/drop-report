@@ -205,6 +205,26 @@ What set each one off (the chest search or break just before; `scan-paths ... --
 - None of the 15 chests was a refill, so this says nothing yet about refilled chests (they're about 4% of chests).
 - About one match in three earned something (15 of 51). By mode: squad 10 of 28, duo 2 of 10, solo 1 of 11, trio 2 of 2.
 
+**Seen in the owner's log: counting more than one treasure (16 Nov, 51 matches).** Fortnite logs
+`... Current active widget [WBP_DelilahTreasureHunt_RewardWon_C_N] does not want to show content` when its in-match "reward
+won" popup is asked to show. Most matches log it once, about a minute in, whether or not anything was won (some log it
+not at all). Matches with a Treasures Found screen log it once more per treasure: 12 matches once more, 2 matches twice
+more (14 Nov 11:07 AM and 12:36 PM, both squads: two treasures each), 1 match not at all. The 36 matches without the screen
+never logged an extra one. Tonight's three extra lines each came shortly after the replay's prize moment. So the log can
+count a second treasure that the replay can't. This is a reading of matching patterns, not of the game's code, and it only
+covers the days Fortnite keeps its log.
+
+What doesn't work: the owner's granted-ability list (`FortAbilitySystemComponentAthena`, fields ability/Handle/Level/
+SourceObject) is in the replay's layout, but the parser doesn't hand over its entries, so it can't count handler grants.
+
+**Other players' treasures.** The only thing other players can see is the gold treasure chest (Major or Supreme prizes),
+for chests near the replay owner. Its tier and prize aren't replicated (`Tier`, `TierData`, `PrizeTemplateId` never arrive),
+and the same two files load for every gold chest (`BGA_DelilahTreasureHuntAnimatedChest`, `MR_Athena_Chest_Parent`). The
+treasure-hunt blueprints never announce a prize to other players (no multicast; the prize quests have
+`bDisplayDynamicAnnouncementUpdate = false`). So nobody can tell from a replay whether another player got Pirate Shop Access.
+By Epic's published odds, a gold chest is the token about once in 1,100 (1/137,500 against all Major and Supreme odds
+together). In the owner's 51 matches, the only gold chests in view were his own two.
+
 **Before a match: nothing.** Nothing the client receives says whether a match holds the token or any prize (see the
 pre-roll section), and no chest looks different.
 
