@@ -149,6 +149,13 @@ public static class Insights
         };
     }
 
+    /// <summary>One line on the connection in a match, from Fortnite's log.</summary>
+    public static string Connection(MatchSummary m)
+    {
+        if (m.JitterMs is not double j) return null;
+        return $"Ping variation (Fortnite's own measure, worst stretch of the match): {j:0} ms" + (m.LoadSeconds is double l ? $" · load screen {l:0.0} s" : "") + ". From Fortnite's log.";
+    }
+
     /// <summary>Personal records this match set, against every match before it (any mode).</summary>
     public static List<string> Records(MatchSummary m, IEnumerable<MatchSummary> all)
     {
@@ -238,6 +245,7 @@ public static class Insights
             var top10 = (double)placed.Count(m => m.Placement <= 10) / placed.Count;
             if (top10 >= 0.5) notes.Add(new Note("strength", "You make it to the end", $"Top 10 in {top10:P0} of matches, {s.Wins} {(s.Wins == 1 ? "win" : "wins")}."));
         }
+
         return notes;
     }
 }

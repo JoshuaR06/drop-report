@@ -19,6 +19,11 @@ public sealed record MatchSummary(
     /// <summary>From Fortnite's log, not the replay (TreasureLog.Earned): true = the post-match Treasures Found screen
     /// followed this match, false = the log covered it and it didn't, null = no log for that time. Set when loaded.</summary>
     [JsonIgnore] public bool? TreasureEarned { get; init; }
+    /// <summary>Treasures this match: the replay's first one, or more when Fortnite's log shows extra reward popups.</summary>
+    [JsonIgnore] public int TreasureCount { get; init; }
+    /// <summary>From Fortnite's log: worst ping jitter in the match (ms) and the load screen into it (s); null = no log.</summary>
+    [JsonIgnore] public double? JitterMs { get; init; }
+    [JsonIgnore] public double? LoadSeconds { get; init; }
 }
 
 /// <summary>The moment the replay owner earned a treasure (from the prize handler; see MatchReader.PrizeHandlers) and what

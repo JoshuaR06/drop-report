@@ -28,7 +28,12 @@ public sealed class Library
         foreach (var f in Directory.GetFiles(AppData.Matches, "*.summary.json"))
             try { var s = JsonSerializer.Deserialize<MatchSummary>(File.ReadAllText(f), Json.Options); if (s != null) list.Add(s); } catch { }
         var tl = _settings.ReadGameLog ? TreasureLog : null;
-        Matches = list.Select(m => m with { TreasureEarned = Earned(m, tl) }).OrderByDescending(m => m.Start ?? DateTime.MinValue).ToList();
+        Matches = list.Select(m =>
+        {
+            var earned = Earned(m, tl);
+            var count = earned == true ? Math.Max(Math.Max(m.Prizes?.Count ?? 0, tl?.PopupTreasures(m) ?? 0), 1) : 0;
+            return m with { TreasureEarned = earned, TreasureCount = count, JitterMs = tl?.JitterMs(m), LoadSeconds = tl?.LoadSeconds(m) };
+        }).OrderByDescending(m => m.Start ?? DateTime.MinValue).ToList();
         Changed?.Invoke();
     }
 
@@ -124,8 +129,11 @@ public sealed class Library
 
     private static TreasureLog LoadTreasureLog()
     {
-        try { if (File.Exists(AppData.TreasureLogFile)) return JsonSerializer.Deserialize<TreasureLog>(File.ReadAllText(AppData.TreasureLogFile)) ?? new(); } catch { }
-        return new();
+        TreasureLog log = null;
+        try { if (File.Exists(AppData.TreasureLogFile)) log = JsonSerializer.Deserialize<TreasureLog>(File.ReadAllText(AppData.TreasureLogFile)); } catch { }
+        log ??= new();
+        if (log.Format < TreasureLog.CurrentFormat) { log.Read.Clear(); log.Format = TreasureLog.CurrentFormat; }   // read the logs again for the new fields
+        return log;
     }
 
     /// <summary>Fortnite's log: which matches showed the Treasures Found screen. Only between matches (never during one),

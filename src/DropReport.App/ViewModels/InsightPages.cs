@@ -156,7 +156,7 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
         var covered = ms.Where(m => m.TreasureEarned != null).ToList();
         var won = covered.Where(m => m.TreasureEarned == true).OrderByDescending(m => m.Start).ToList();
         Earned = won.Select(m => new CountLine($"{m.Start:ddd d MMM, h:mm tt} · {m.Mode}", "Rare",
-            m.Prizes is { Count: > 0 } p ? string.Join(" ", p.Select(Treasure.Describe))
+            m.Prizes is { Count: > 0 } p ? string.Join(" ", p.Select(Treasure.Describe)) + (m.TreasureCount > p.Count ? $" Fortnite's log shows {m.TreasureCount} treasures in this match." : "")
                 : "Fortnite showed its Treasures Found screen after this match (from its log; this replay was read before Drop Report could see the moment).",
             m.Prizes?.FirstOrDefault()?.Trigger switch { "me" => "YOU", "teammate" => "TEAM", _ => "EARNED" })).ToList();
         var byMode = string.Join(" · ", covered.GroupBy(m => m.Mode).OrderByDescending(g => g.Count())
@@ -169,7 +169,7 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
             (moments.Any(x => x.Trigger == "unseen") ? $", out of view {Times(moments.Count(x => x.Trigger == "unseen"))}" : "") + ".";
         EarnedNote = covered.Count == 0
             ? "Nothing yet. Drop Report spots the moment you earn a treasure in each replay (the game grants its prize handler to you right then), and ties it to the chest that set it off."
-            : $"{won.Count} of {covered.Count} matches earned at least one treasure ({byMode}).{how} " +
+            : $"{won.Count} of {covered.Count} matches earned at least one treasure ({byMode}), {won.Sum(m => m.TreasureCount)} treasures in all (Fortnite's log adds a second one where the replay only sees the first).{how} " +
               "A teammate's chest can earn you a treasure: your replays show it within half a second of their chest. Which treasure isn't in the replay; your locker and gizmo wheel are the record.";
 
         // what the chests were

@@ -21,6 +21,8 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
     public string Dek { get; }
     /// <summary>Set when the replay's elimination events don't add up to Epic's own count (per-weapon credit may be off).</summary>
     public string ElimCheck { get; }
+    public string ConnectionNote { get; }
+    public bool HasConnection => ConnectionNote != null;
     public bool HasElimCheck => ElimCheck != null;
     /// <summary>Treasure reveals in this match, one sentence each.</summary>
     public string TreasureNote { get; }
@@ -77,6 +79,7 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
         if (m.Prizes is { Count: > 0 } pz)
         {
             notes.AddRange(pz.Select(Treasure.Describe));
+            if (m.TreasureCount > pz.Count) notes.Add($"Fortnite's log shows {m.TreasureCount} treasures in this match; the replay only records the first.");
             notes.Add("The replay doesn't say which treasure; your locker and gizmo wheel do.");
             if (m.Reveals != null) notes.AddRange(m.Reveals.Where(x => x.Who != "me" || !pz.Any(p => p.Gold)).Select(x => Treasure.Describe(x)));
         }
@@ -86,6 +89,7 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
             if (m.Reveals is { Count: > 0 } rv) notes.AddRange(rv.Select(x => Treasure.Describe(x)));
         }
         if (notes.Count > 0) TreasureNote = string.Join("  ", notes);
+        ConnectionNote = Insights.Connection(m);
         if (m.Epic.Elims is int epic && epic != m.Fights.Elims)
             ElimCheck = $"Epic counted {epic} eliminations; the replay's elimination events credit you with {m.Fights.Elims}. Totals use Epic's number, so the per-weapon split below may be off by {Math.Abs(epic - m.Fights.Elims)}.";
         Duration = Map?.End ?? m.Minutes * 60;

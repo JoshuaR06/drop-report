@@ -29,6 +29,7 @@
         </StackPanel>
       </Border>
       <TextBlock Text="{Binding ElimCheck}" IsVisible="{Binding HasElimCheck}" Classes="note" MaxWidth="900" HorizontalAlignment="Left" Margin="0,6,0,0" />
+      <TextBlock Text="{Binding ConnectionNote}" IsVisible="{Binding HasConnection}" Classes="note" MaxWidth="900" HorizontalAlignment="Left" Margin="0,2,0,0" />
     </StackPanel>
 
     <!-- scoreboard strip -->

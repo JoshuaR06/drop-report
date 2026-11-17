@@ -44,8 +44,9 @@ Free and open source. Windows. Reads your own replay files; nothing leaves your 
 ## Safe by design
 
 - **Reads files only, after the match.** Drop Report reads finished `.replay` files, the game's own data files on disk
-  (for item names), and, between matches, one line of Fortnite's log: the one written when the "Treasures Found" screen
-  shows (only its time is kept; a switch in Settings turns it off). It never reads game memory, never injects anything,
+  (for item names), and, between matches, a few kinds of line from Fortnite's log: the "Treasures Found" screen and
+  reward popups (to count treasures), its ping-variation measure and load-screen time. Only times and numbers are kept, never
+  a line or a name; a switch in Settings turns it off. It never reads game memory, never injects anything,
   never touches the running game, which is what anti-cheat looks for, and never reads anything during a match.
 - **Won't slow your game.** It reads replays at low priority and never while a match is being recorded. No admin
   rights. Starting with Windows is your choice (setup asks; Settings turns it off).

@@ -212,7 +212,16 @@ not at all). Matches with a Treasures Found screen log it once more per treasure
 more (14 Nov 11:07 AM and 12:36 PM, both squads: two treasures each), 1 match not at all. The 36 matches without the screen
 never logged an extra one. Tonight's three extra lines each came shortly after the replay's prize moment. So the log can
 count a second treasure that the replay can't. This is a reading of matching patterns, not of the game's code, and it only
-covers the days Fortnite keeps its log.
+covers the days Fortnite keeps its log. Drop Report counts popups between one match's treasure-UI set-up line
+(`Adding scene: UIScene_DelilahTreasureHunt_RewardWon`) and the next match's, so a following match's popup isn't counted.
+
+**Other numbers in Fortnite's log (16 Nov survey).** Mostly cosmetics loading, voice chat and asset streaming. Kept by Drop
+Report, numbers only: the profiler's `worstperiodofpingvariancems` (climbs during a match; its peak is shown per match as
+"ping variation", without a verdict, since what's normal for it isn't documented; the owner's matches split into about
+3-8 ms and 45-53 ms) and `maploadscreenduration`. Not used: ranked lines (`LogFortControllerComponentHabanero`, several
+players' progress, can't be tied to the owner), `averagereplicationblockedseconds`/`maxreplicationblockedseconds` (unclear
+whether it's the network or the replay recorder), and every line type that carries names or account ids (profile, quest,
+cosmetics, party, voice).
 
 What doesn't work: the owner's granted-ability list (`FortAbilitySystemComponentAthena`, fields ability/Handle/Level/
 SourceObject) is in the replay's layout, but the parser doesn't hand over its entries, so it can't count handler grants.

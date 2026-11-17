@@ -368,6 +368,32 @@ public class TreasureTests
     }
 
     [Fact]
+    public void Treasure_log_counts_popups_jitter_and_load()
+    {
+        var log = new TreasureLog();
+        const string pop = "LogFortPrioSwitcher: [UFortPrioritizedWidgetSwitcher::OnWidgetRequestedActivation()] Current active widget [WBP_DelilahTreasureHunt_RewardWon_C_2147] does not want to show content";
+        log.Add(new[]
+        {
+            "[2026.11.14-16.07.30:000][  0]LogCsvProfiler: Display: Metadata set : maploadscreenduration=\"11.76\"",
+            "[2026.11.14-16.07.35:000][  0]LogDynamicUI: Adding scene: UIScene_DelilahTreasureHunt_RewardWon [FortLocalPlayer_0]",
+            "[2026.11.14-16.08.40:000][  1]" + pop,                                                 // the usual one, about a minute in
+            "[2026.11.14-16.09.00:000][  2]LogCsvProfiler: Display: Metadata set : worstperiodofpingvariancems=\"12.0\"",
+            "[2026.11.14-16.10.48:000][  3]" + pop,                                                 // treasure 1
+            "[2026.11.14-16.12.00:000][  4]LogCsvProfiler: Display: Metadata set : worstperiodofpingvariancems=\"46.4\"",
+            "[2026.11.14-16.13.06:000][  5]" + pop,                                                 // treasure 2
+            "[2026.11.14-16.20.30:000][  6]LogDynamicUI: Adding scene: UIScene_DelilahTreasureHunt_RewardWon [FortLocalPlayer_0]",   // next match
+            "[2026.11.14-16.21.31:000][  6]" + pop,                                                 // its usual popup: not ours
+            "[2026.11.14-16.25.00:000][  6]LogCsvProfiler: Display: Metadata set : worstperiodofpingvariancems=\"3.1\"", // next match: falls back
+            "[2026.11.14-16.40.00:000][  7]LogExit: bye",
+        });
+        var m = M(new DateTime(2026, 11, 14, 16, 7, 28, DateTimeKind.Utc), new(), new()) with { Minutes = 12.9 };
+        Assert.Equal(2, log.PopupTreasures(m));
+        Assert.Equal(46.4, log.JitterMs(m));
+        Assert.Equal(11.8, log.LoadSeconds(m));
+        Assert.Equal(2, log.Jitter.Count);                                                          // one peak per match
+    }
+
+    [Fact]
     public void Treasure_moment_goes_to_the_chest_just_before_it()
     {
         ChestEvent C(double t, string who, string kind = "opened") => new(t, kind, "Chest", who, null, null, null, null, new());
