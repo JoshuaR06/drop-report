@@ -72,8 +72,8 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
         new("Certain: game files and Epic's live config", "Uncommon", "The prizes and their tiers, the weekly rotation (Sunday 14:00 UTC), the end of the hunt (5 Dec 14:00 UTC), which chests can hold a treasure, and that Gizmo prizes map to gizmo-wheel account items.", ""),
         new("Published by Epic", "Rare", "The per-chest odds and the 7 Nov Treasure Hours boosts (Fortnite Status and Epic's help page). Later Treasure Hours are as reported, not confirmed.", ""),
         new("Seen in your replays", "Epic", "Chests you and your team opened or broke, refills, and every gold treasure chest that appeared.", ""),
-        new("Certain: from your Fortnite log", "Uncommon", "Which matches earned you a treasure. The game only shows its post-match \"Treasures Found\" screen when you earned one, and its log notes when it does. Not which treasure it was.", ""),
-        new("Reported, not confirmed by Epic", "Epic", "That your whole squad can win when a teammate rolls a prize (in-game event text posted by leakers), and how Ranked is treated (conflicting reports).", ""),
+        new("Seen in your replays: treasures earned", "Uncommon", "When you earned a treasure and the chest that set it off. The game grants its prize handler to the player who earns a prize, and your replay records it (it matched Fortnite's \"Treasures Found\" screen in 15 of 15 matches). Only the first treasure in a match shows, and not which treasure it was.", ""),
+        new("Seen in your replays, not confirmed by Epic", "Epic", "That a teammate's chest can earn you a treasure (you earn one within half a second of their chest, with yours nowhere near), and that broken chests pay out. How Ranked is treated: conflicting reports.", ""),
         new("Not knowable from your PC", "Legendary", "Whether a match or a chest holds the token or any treasure before it's opened (that stays on Epic's servers; no chest looks different), what a roll granted, whether a broken treasure chest still pays out, and where a given Gizmo came from (Gizmos also come from quests and Sprite Mastery). Your post-match \"Treasures found\" screen and your locker are the record.", ""),
     };
 
@@ -116,7 +116,7 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
             new Tile("A DAY", r.ChestsPerDay.ToString("N0", ci), "since your first match"),
             new Tile("TREASURE HOURS", r.BoostedChests.ToString("N0", ci), "chests at boosted odds"),
             new Tile("REFILLED", r.Refills.ToString("N0", ci), CountRefills ? "counted" : "not counted"),
-            new Tile("TREASURE EARNED", ms.Count(m => m.TreasureEarned == true).ToString("N0", ci), $"of {ms.Count(m => m.TreasureEarned != null):N0} matches in Fortnite's log"),
+            new Tile("TREASURE EARNED", ms.Count(m => m.TreasureEarned == true).ToString("N0", ci), $"of {ms.Count(m => m.TreasureEarned != null):N0} matches checked"),
         };
         var p = PerChest;
         Milestones = r.Milestones.Select(m =>
@@ -152,18 +152,25 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
             ? "None yet. When a chest holding a treasure is opened or broken in view of your replay, the game swaps in a treasure chest, and it shows up here."
             : $"{rv.Count} in {ms.Count} matches. A reveal is the game swapping a chest for its treasure chest; the replay usually doesn't carry which prize (that's settled on Epic's servers).";
 
-        // matches that earned a treasure (Fortnite's log: the post-match Treasures Found screen)
+        // matches that earned a treasure: the moment from the replay (the prize handler), else Fortnite's log
         var covered = ms.Where(m => m.TreasureEarned != null).ToList();
         var won = covered.Where(m => m.TreasureEarned == true).OrderByDescending(m => m.Start).ToList();
         Earned = won.Select(m => new CountLine($"{m.Start:ddd d MMM, h:mm tt} · {m.Mode}", "Rare",
-            (m.Reveals?.Any(x => x.Who is "me" or "teammate") == true ? "Gold treasure chest in this match. " : "") + "Fortnite showed its Treasures Found screen after this match.", "EARNED")).ToList();
+            m.Prizes is { Count: > 0 } p ? string.Join(" ", p.Select(Treasure.Describe))
+                : "Fortnite showed its Treasures Found screen after this match (from its log; this replay was read before Drop Report could see the moment).",
+            m.Prizes?.FirstOrDefault()?.Trigger switch { "me" => "YOU", "teammate" => "TEAM", _ => "EARNED" })).ToList();
         var byMode = string.Join(" · ", covered.GroupBy(m => m.Mode).OrderByDescending(g => g.Count())
             .Select(g => $"{g.Key} {g.Count(m => m.TreasureEarned == true)} of {g.Count()}"));
-        EarnedNote = !Main.Settings.ReadGameLog
-            ? "Turned off in Settings (Fortnite's log)."
-            : covered.Count == 0
-                ? "Nothing on record yet. After each match Drop Report looks in Fortnite's log for its \"Treasures Found\" screen, which the game only shows when you earned a treasure. Fortnite keeps only a few days of logs, so older matches can't be checked."
-                : $"{won.Count} of the {covered.Count} matches your Fortnite log covers earned at least one treasure ({byMode}). The game only shows its \"Treasures Found\" screen when you earned something; its log doesn't say what. Fortnite keeps a few days of logs, and Drop Report keeps the times from here on.";
+        var moments = won.Where(m => m.Prizes != null).SelectMany(m => m.Prizes).ToList();
+        string Times(int n) => n == 1 ? "once" : $"{n} times";
+        var how = moments.Count == 0 ? "" :
+            $" What set them off: your own chest {Times(moments.Count(x => x.Trigger == "me"))} ({moments.Count(x => x.Trigger == "me" && x.Kind == "broken")} broken), " +
+            $"a teammate's chest {Times(moments.Count(x => x.Trigger == "teammate"))}" +
+            (moments.Any(x => x.Trigger == "unseen") ? $", out of view {Times(moments.Count(x => x.Trigger == "unseen"))}" : "") + ".";
+        EarnedNote = covered.Count == 0
+            ? "Nothing yet. Drop Report spots the moment you earn a treasure in each replay (the game grants its prize handler to you right then), and ties it to the chest that set it off."
+            : $"{won.Count} of {covered.Count} matches earned at least one treasure ({byMode}).{how} " +
+              "A teammate's chest can earn you a treasure: your replays show it within half a second of their chest. Which treasure isn't in the replay; your locker and gizmo wheel are the record.";
 
         // what the chests were
         var s2 = SeasonStats.Compute(ms);

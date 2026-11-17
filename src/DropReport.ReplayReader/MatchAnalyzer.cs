@@ -9,8 +9,8 @@ namespace DropReport.Analysis;
 public static class MatchAnalyzer
 {
     /// <summary>Bump when the summary gains data: the app re-reads older summaries on its next scan.
-    /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock. 6 = dug-up treasure chests. 7 = Sprite chest variants, Sprite Locator chests, treasure reveals.</summary>
-    public const int SummaryVersion = 7;
+    /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock. 6 = dug-up treasure chests. 7 = Sprite chest variants, Sprite Locator chests, treasure reveals. 8 = treasure earned (prize moments).</summary>
+    public const int SummaryVersion = 8;
 
     public static MatchResult Analyze(string replayPath, ItemTable names, ILogger logger = null, MapGeo geo = null)
     {
@@ -209,6 +209,10 @@ public static class MatchAnalyzer
                                       Treasure.PrizeName(prize), ups.Select(x => RawNumber(x.Tier)).LastOrDefault(x => x != null));
         }).OrderBy(x => x.T).ToList();
 
+        // ---- treasures earned: the prize handler's first appearance, tied to the chest that set it off
+        var prizes = r.PrizeHandlers.Where(p => p.Path.Contains("TreasureHandler_Generic", StringComparison.OrdinalIgnoreCase))
+            .Select(p => Treasure.Attribute(Math.Round(p.T, 1), chestEvents, reveals)).ToList();
+
         // ---- summary
         var playlist = replay.GameData?.CurrentPlaylist ?? "";
         var summary = new MatchSummary(SummaryVersion, Path.GetFileName(file), Rules.StartFromFileName(file), r.Branch, Rules.SeasonOf(r.Branch), playlist,
@@ -217,7 +221,7 @@ public static class MatchAnalyzer
             new EpicStats(me?.Kills is uint mk ? (int)mk : s?.Eliminations is uint se ? (int)se : null, s?.Assists is uint a ? (int)a : null, s?.Accuracy,
                           s?.DamageToPlayers is uint dp ? (int)dp : null, s?.DamageTaken is uint dt ? (int)dt : null,
                           s?.DamageToStructures is uint ds ? (int)ds : null, s?.TotalTraveled is uint tv ? Math.Round(tv / 100.0) : null),
-            chests, seasonItems, damage, fights, death, Reveals: reveals.Count > 0 ? reveals : null);
+            chests, seasonItems, damage, fights, death, Reveals: reveals.Count > 0 ? reveals : null, Prizes: prizes.Count > 0 ? prizes : null);
 
         // ---- map
         var tracks = r.PawnTracks.Where(kv => kv.Value.Count > 1).Select(kv => new Track(kv.Key, Role(kv.Key),

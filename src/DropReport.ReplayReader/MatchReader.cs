@@ -48,6 +48,21 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     /// actor classes, ...). The parser clears its own cache at the end, so it is copied while reading.</summary>
     public bool CollectPaths { get; set; }
     public Dictionary<uint, string> AllPaths { get; } = new();
+    /// <summary>When the replay owner earned a treasure: the match time Fortnite's prize-handler ability
+    /// (/PrizeHandlers/GA_TreasureHandler_Generic, granted to the player who earns a prize) is first referenced. Only the
+    /// first prize per match shows, since later ones reuse the same reference.</summary>
+    public List<(string Path, float T)> PrizeHandlers { get; } = new();
+    private int _prizeScanCount, _sincePrizeScan;
+    private void ScanPrizeHandlers()
+    {
+        var gp = GuidPaths;
+        if (gp == null || gp.Count == _prizeScanCount || PrizeHandlers.Exists(p => p.Path.Contains("TreasureHandler_Generic"))) return;
+        _prizeScanCount = gp.Count;
+        foreach (var v in gp.Values)
+            if (v != null && v.Contains("/PrizeHandlers/", StringComparison.OrdinalIgnoreCase) && !PrizeHandlers.Exists(p => p.Path == v))
+                PrizeHandlers.Add((v, CurrentTimeSeconds));
+    }
+
     /// <summary>Research: match time each path was first copied in (accurate to a few hundred updates).</summary>
     public Dictionary<string, float> PathFirstSeen { get; } = new();
     /// <summary>Research: networked class (export group) -> its replicated field names, for groups matching GroupFilter.</summary>
@@ -131,6 +146,7 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
         try { base.ReadEvent(archive); }
         catch (Exception e) when (e.GetType().Name == "UnknownEventException") { }
         CopyPaths();   // events (incl. the end-of-match ones) come late: catch paths first referenced after the last copy
+        ScanPrizeHandlers();
     }
 
     private void CopyPaths()
@@ -163,6 +179,7 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     {
         base.OnExportRead(channelIndex, exportGroup);
         if (CurrentTimeSeconds > LastTime) LastTime = CurrentTimeSeconds;
+        if (++_sincePrizeScan >= 100) { _sincePrizeScan = 0; ScanPrizeHandlers(); }
         if (CollectPaths && ++_sinceCopy >= 100 && GuidPaths.Count != AllPaths.Count)
         {
             _sinceCopy = 0;

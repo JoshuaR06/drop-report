@@ -117,6 +117,38 @@ public static class Treasure
                (r.Prize != null ? $"Prize: {r.Prize}." : "The replay doesn't carry which prize" + (r.Broken ? ", or whether breaking the chest still granted it." : "."));
     }
 
+    /// <summary>What set off a treasure earned at time t: the nearest chest search or break by you or a teammate in the 2.5 s
+    /// before (a gold treasure chest adds about 2 s of animation; other prizes land within about half a second). Seen in 15 of
+    /// 15 matches checked on 16 Nov 2026; no chest in view = "unseen" (a teammate out of the replay's range).</summary>
+    public static TreasureMoment Attribute(double t, IEnumerable<ChestEvent> chests, IEnumerable<TreasureReveal> reveals)
+    {
+        // a gold treasure chest just before: its opener is the one (the chest animation runs about 2 s before the prize lands)
+        var rv = reveals.Where(r => r.Who is "me" or "teammate" && r.T <= t + 0.3 && r.T >= t - 3.5).OrderBy(r => t - r.T).FirstOrDefault();
+        if (rv != null)
+        {
+            var src = chests.Where(c => c.Who == rv.Who && Math.Abs(c.T - rv.T) <= 1.0).OrderBy(c => Math.Abs(c.T - rv.T)).FirstOrDefault();
+            return new TreasureMoment(t, rv.Who, rv.Broken ? "broken" : "opened", src?.Chest ?? rv.Chest, true, src?.Refill ?? false);
+        }
+        var e = chests.Where(c => c.Who is "me" or "teammate" && c.Kind is "opened" or "broken" && c.T <= t + 0.3 && c.T >= t - 2.5)
+                      .OrderBy(c => Math.Abs(t - c.T)).FirstOrDefault();
+        var gold = reveals.Any(r => r.T <= t + 0.3 && r.T >= t - 3.5);
+        return e == null ? new TreasureMoment(t, "unseen", null, null, gold, false) : new TreasureMoment(t, e.Who, e.Kind, e.Chest, gold, e.Refill);
+    }
+
+    /// <summary>One sentence for a treasure earned.</summary>
+    public static string Describe(TreasureMoment p)
+    {
+        var clock = $"{(int)(p.T / 60)}:{(int)(p.T % 60):00}";
+        var chest = p.Chest == null ? "chest" : p.Chest.ToLowerInvariant().Contains("chest") ? p.Chest.ToLowerInvariant() : "chest";
+        var how = p.Trigger switch
+        {
+            "me" => $"you {(p.Kind == "broken" ? "broke" : "opened")} a {(p.Refill ? "refilled " : "")}{chest}",
+            "teammate" => $"a teammate {(p.Kind == "broken" ? "broke" : "opened")} a {(p.Refill ? "refilled " : "")}{chest} (their chest, your treasure)",
+            _ => "no chest was in view (likely a teammate's chest out of range)",
+        };
+        return $"Treasure earned at {clock}: {how}." + (p.Gold ? " The gold treasure chest appeared, so it was a Major or Supreme prize (a weekly cosmetic, the Gold Outfit or Pirate Shop Access)." : "");
+    }
+
     public static bool IsRewardChest(string type) => type != null && type.Contains("chest", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Chest searches in one match that roll for rewards under this rule.</summary>

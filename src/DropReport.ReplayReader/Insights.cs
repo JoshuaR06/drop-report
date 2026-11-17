@@ -167,7 +167,7 @@ public static class Insights
     public static List<string> Highlights(MatchSummary m, IEnumerable<MatchSummary> all)
     {
         var r = new List<string>();
-        if (m.TreasureEarned == true) r.Add("Treasure earned");
+        if (m.TreasureEarned == true) r.Add(m.Prizes?.FirstOrDefault()?.Trigger == "teammate" ? "Treasure from a teammate's chest" : "Treasure earned");
         foreach (var t in (m.Reveals ?? new()).Where(x => x.Who is "me" or "teammate"))
             r.Add(t.Prize != null ? $"Treasure: {t.Prize}" : t.Who == "me" ? (t.Broken ? "Gold treasure chest! (you broke it)" : "Gold treasure chest!") : "Your team found a gold treasure chest");
         r.AddRange(Records(m, all));

@@ -13,12 +13,18 @@ public sealed record MatchSummary(
     EpicStats Epic, ChestStats Chests, List<SeasonPickup> PickedUp, DamageStats Damage, FightStats Fights, DeathInfo Death,
     string Haunt = null,    // the named location you spent the most time near (needs the map data); for headlines
     string Landing = null,  // the named location nearest to where you touched down (null = open ground or no map data)
-    List<TreasureReveal> Reveals = null)    // season 43: chests that turned out to hold a treasure
+    List<TreasureReveal> Reveals = null,    // season 43: chests that turned out to hold a treasure
+    List<TreasureMoment> Prizes = null)     // season 43 (v8+): when you earned a treasure (first one per match) and what set it off
 {
     /// <summary>From Fortnite's log, not the replay (TreasureLog.Earned): true = the post-match Treasures Found screen
     /// followed this match, false = the log covered it and it didn't, null = no log for that time. Set when loaded.</summary>
     [JsonIgnore] public bool? TreasureEarned { get; init; }
 }
+
+/// <summary>The moment the replay owner earned a treasure (from the prize handler; see MatchReader.PrizeHandlers) and what
+/// set it off: the chest search or break by you or a teammate just before it, or "unseen" (nothing in view: a teammate out of
+/// range). Kind = opened or broken. Gold = the game showed its gold treasure chest (a Major or Supreme prize).</summary>
+public sealed record TreasureMoment(double T, string Trigger, string Kind, string Chest, bool Gold, bool Refill);
 
 /// <summary>A treasure reveal: a chest holding a treasure was opened or broken and the game swapped in its animated chest.</summary>
 /// <param name="Who">me, teammate, other or unknown: the opener, else whoever searched or broke a chest at that moment.</param>

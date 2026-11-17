@@ -368,6 +368,19 @@ public class TreasureTests
     }
 
     [Fact]
+    public void Treasure_moment_goes_to_the_chest_just_before_it()
+    {
+        ChestEvent C(double t, string who, string kind = "opened") => new(t, kind, "Chest", who, null, null, null, null, new());
+        var chests = new List<ChestEvent> { C(660, "me"), C(672.9, "teammate", "broken") };
+        var p = Treasure.Attribute(673.1, chests, new List<TreasureReveal>());
+        Assert.Equal(("teammate", "broken", false), (p.Trigger, p.Kind, p.Gold));                    // a teammate's chest, yours 13 s earlier
+        var gold = Treasure.Attribute(919.8, new List<ChestEvent> { C(917.0, "me") }, new List<TreasureReveal> { new(917.0, "Chest", "me", false, null, null, null) });
+        Assert.Equal(("me", true), (gold.Trigger, gold.Gold));                                       // gold chest: about 2 s of animation first
+        Assert.Equal("unseen", Treasure.Attribute(396.4, chests, new List<TreasureReveal>()).Trigger); // nothing in view
+        Assert.Contains("their chest, your treasure", Treasure.Describe(p));
+    }
+
+    [Fact]
     public void Spots_need_enough_drops_to_rank()
     {
         var ms = new List<MatchSummary>

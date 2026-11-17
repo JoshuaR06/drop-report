@@ -185,6 +185,14 @@ replays, and those are exactly the 15 matches whose Treasures Found screen is in
 extra). It appears about 2 s after a gold treasure chest (the chest animation), and otherwise within about half a second of a
 chest search or break. So replays alone tell which matches earned a treasure and when, back to the first replay, without the
 log. Limit: only the first prize in a match shows (the class is already referenced after that). Tool: `dropreport prize-moments`.
+Drop Report uses this from summary version 8 (`MatchReader.PrizeHandlers`, `Treasure.Attribute`); the log is now a backup.
+
+What the handler is (game files): `GA_Prizes_EventListener` hears the server's prize event and, for each prize, grants the
+handler named by the prize's `EventHandler` tag (`DT_PrizeHandlers`) to the player who earned it. Every one of the 31
+prizes (the token, cosmetics and gizmos) uses the same tag, `DelilahTreasureHunt.PrizeHandler.Tier.3`, so the same handler,
+`GA_TreasureHandler_Generic`; the only other handler is for treasure keys. The handler sends the prize id and the chest to
+the player's game (`Client_ReplicateContext(PrizeId, Container)`), but that message isn't recorded in replays (the class
+replicates no fields, and no group for the message exists). So the handler says when and to whom, never which prize.
 
 What set each one off (the chest search or break just before; `scan-paths ... --list` gives the times):
 - **The owner's own chest, 10 of 15:** opened 6 times, **broken 4 times** (13 Nov solo, 14 Nov ×3, including the gold-chest

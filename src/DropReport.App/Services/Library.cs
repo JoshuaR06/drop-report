@@ -12,6 +12,7 @@ public sealed class Library
 {
     private readonly Settings _settings;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private bool _logReadThisRun;
     public ItemTable Names { get; private set; } = ItemTable.Empty;
     public List<MatchSummary> Matches { get; private set; } = new();
     public TreasureLog TreasureLog { get; private set; } = LoadTreasureLog();
@@ -27,8 +28,18 @@ public sealed class Library
         foreach (var f in Directory.GetFiles(AppData.Matches, "*.summary.json"))
             try { var s = JsonSerializer.Deserialize<MatchSummary>(File.ReadAllText(f), Json.Options); if (s != null) list.Add(s); } catch { }
         var tl = _settings.ReadGameLog ? TreasureLog : null;
-        Matches = list.Select(m => tl == null ? m : m with { TreasureEarned = tl.Earned(m) }).OrderByDescending(m => m.Start ?? DateTime.MinValue).ToList();
+        Matches = list.Select(m => m with { TreasureEarned = Earned(m, tl) }).OrderByDescending(m => m.Start ?? DateTime.MinValue).ToList();
         Changed?.Invoke();
+    }
+
+    /// <summary>Did this match earn a treasure? Replays read by v8+ know for sure (the prize handler; first prize per match).
+    /// Older summaries fall back to Fortnite's log, which only covers the last few days.</summary>
+    private static bool? Earned(MatchSummary m, TreasureLog log)
+    {
+        if (m.Prizes is { Count: > 0 }) return true;
+        var fromLog = log?.Earned(m);
+        if (m.Version >= 8 && m.Season == Treasure.Season) return fromLog == true;
+        return fromLog;
     }
 
     public MapData LoadMap(MatchSummary m)
@@ -107,7 +118,7 @@ public sealed class Library
             }
         }
         if (analyzed + failed > 0) AppData.Log($"analyzed {analyzed}, failed {failed}");
-        ReadGameLogs();
+        if (archived > 0 || !_logReadThisRun) { _logReadThisRun = true; ReadGameLogs(); }   // after a match, not every minute
         return new ScanResult(archived, analyzed, failed, false);
     }
 
