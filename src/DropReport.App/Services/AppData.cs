@@ -33,6 +33,8 @@ public static class AppData
     public static string FortniteLogs { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FortniteGame", "Saved", "Logs");
     /// <summary>Times of Fortnite's post-match Treasures Found screen (timestamps only; see TreasureLog).</summary>
     public static string TreasureLogFile => Path.Combine(Root, "treasure-log.json");
+    /// <summary>Spots where rolling chests have been opened in your matches (for estimating teammates' unseen searches).</summary>
+    public static string ChestSpotsFile => Path.Combine(Root, "chest-spots.json");
 
     private static string Dir(string name) { var d = Path.Combine(Root, name); Directory.CreateDirectory(d); return d; }
 
@@ -80,6 +82,8 @@ public sealed class Settings
     public bool CountRefills { get; set; } = true;
     public bool CountBroken { get; set; } = true;
     public bool CountTeam { get; set; } = true;
+    /// <summary>With CountTeam: add teammates' chest searches out of the replay's view (estimated, TeamEstimate).</summary>
+    public bool CountUnseen { get; set; } = true;
     /// <summary>After a match, look in Fortnite's log for its "Treasures Found" screen (only that line's time is kept).</summary>
     public bool ReadGameLog { get; set; } = true;
     public bool SetupDone { get; set; }

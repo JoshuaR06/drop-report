@@ -311,6 +311,36 @@ public class TreasureTests
     }
 
     [Fact]
+    public void Unseen_teammate_searches_are_estimated_only_where_the_replay_could_not_see()
+    {
+        var shown = new List<ChestEvent> { new(100, "opened", "Chest", "teammate", 50_000, 0, null, null, new()) };
+        var starts = new List<SearchStart>
+        {
+            new(100.5, 1, 50_100, 0, 0.8),      // the shown chest: already counted
+            new(200, 1, 60_000, 0, 0.8),        // 600 m away, chest-length search: unseen
+            new(210, 1, 60_000, 30_000, 0.3),   // too short: cancelled or not a chest
+            new(220, 1, 5_000, 0, 0.8),         // 50 m from me: the replay would have shown a chest
+            new(230, 0, 70_000, 0, 0.8),        // mine, never estimated
+            new(240, 1, 90_000, 0, 0.8),        // far, but I'm out (position unknown): the replay follows a teammate
+        };
+        (double x, double y)? Me(double t) => t >= 235 ? null : (0, 0);
+        var unseen = TeamEstimate.Unseen(starts, shown, Me, after: 60);
+        Assert.Single(unseen);
+        Assert.Equal(200, unseen[0].T);
+
+        var spots = new ChestSpots { Season = 43 };
+        spots.AddFrom(new MapData(0, new(), new() { new(5, "opened", "Rare Chest", "me", 60_100, 100, 60_150, 50, new()), new(6, "opened", "Ammo box", "me", 0, 0, null, null, new()) }, new(), new()));
+        Assert.Equal(1, spots.Count);                                                   // ammo boxes never roll, so no spot
+        Assert.Equal(1, spots.Estimate(unseen));                                         // 1.6 m from a known chest spot
+        Assert.Equal(0, spots.Estimate(new List<SearchMark> { new(1, 61_000, 0) }));     // 9 m: not a chest we know of
+
+        var m = M(null, new() { new("Chest", 3, 0) }, new() { new("Chest", 2, 0) }) with { TeamEstimated = 4 };
+        Assert.Equal(3 + 2 + 4, Treasure.Eligible(m, CountRule.Default));
+        Assert.Equal(3 + 2, Treasure.Eligible(m, CountRule.Default with { Unseen = false }));
+        Assert.Equal(3, Treasure.Eligible(m, CountRule.Default with { Team = false }));   // estimates are teammates' chests
+    }
+
+    [Fact]
     public void Odds_match_the_published_math()
     {
         var p = 1 / 137_500.0;

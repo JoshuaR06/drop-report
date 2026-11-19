@@ -28,6 +28,8 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
     [ObservableProperty] private bool _countRefills;
     [ObservableProperty] private bool _countBroken;
     [ObservableProperty] private bool _countTeam;
+    [ObservableProperty] private bool _countUnseen;
+    [ObservableProperty] private string _unseenNote = "";
 
     [ObservableProperty] private string _dateline = "";
     [ObservableProperty] private string _hero = "0";
@@ -83,8 +85,11 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
     {
         Main = main;
         _countRefills = main.Settings.CountRefills; _countBroken = main.Settings.CountBroken; _countTeam = main.Settings.CountTeam;
+        _countUnseen = main.Settings.CountUnseen;
         Refresh();
     }
+
+    partial void OnCountUnseenChanged(bool value) { Main.Settings.CountUnseen = value; Main.Settings.Save(); Refresh(); }
 
     partial void OnCountRefillsChanged(bool value) { Main.Settings.CountRefills = value; Main.Settings.Save(); Refresh(); }
     partial void OnCountBrokenChanged(bool value) { Main.Settings.CountBroken = value; Main.Settings.Save(); Refresh(); }
@@ -96,7 +101,12 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
         var ms = Main.Library.Matches.Where(m => m.Season == Treasure.Season).ToList();
         Empty = ms.Count == 0;
         var now = DateTime.UtcNow;
-        var r = Treasure.Build(ms, new CountRule(CountRefills, CountBroken, CountTeam), now);
+        var r = Treasure.Build(ms, new CountRule(CountRefills, CountBroken, CountTeam, CountUnseen), now);
+        var unseenAll = ms.Sum(m => m.TeamEstimated);
+        UnseenNote = $"Your replay only shows chests opened within about 250 m of you, but Fortnite sends every teammate's \"searching\" signal at any distance. " +
+                     $"A search that lasted a chest's search time, at a spot where a chest has been opened in your matches ({Main.Library.Spots.Count:N0} known so far), counts as an estimated chest. " +
+                     $"This season: about {unseenAll:N0} of your teammates' chests were out of view. Checked against nearby searches the estimate came within 2% overall, " +
+                     "about 1 chest either way in a typical match. It only applies with teammates' chests on.";
         Dateline = $"TREASURE HUNT · SEASON {Treasure.Season} · ALL MODES · {r.Matches} MATCHES · {r.DaysLeft} DAYS LEFT";
 
         Hero = (r.TokenChance * 100).ToString("0.00", ci) + "%";
@@ -111,7 +121,8 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
 
         Tiles = new()
         {
-            new Tile("ROLLING CHESTS", r.Chests.ToString("N0", ci), CountTeam ? "you and your teammates" : "yours only"),
+            new Tile("ROLLING CHESTS", r.Chests.ToString("N0", ci), !CountTeam ? "yours only"
+                : r.TeamEstimated > 0 ? $"you and your teammates, {r.TeamEstimated:N0} of them estimated" : "you and your teammates"),
             new Tile("A MATCH", r.ChestsPerMatch.ToString("0.0", ci), "rolling chests"),
             new Tile("A DAY", r.ChestsPerDay.ToString("N0", ci), "since your first match"),
             new Tile("TREASURE HOURS", r.BoostedChests.ToString("N0", ci), "chests at boosted odds"),
@@ -158,14 +169,15 @@ public sealed partial class TreasureViewModel : ViewModelBase, IRefreshable
         Earned = won.Select(m => new CountLine($"{m.Start:ddd d MMM, h:mm tt} · {m.Mode}", "Rare",
             m.Prizes is { Count: > 0 } p ? string.Join(" ", p.Select(Treasure.Describe)) + (m.TreasureCount > p.Count ? $" Fortnite's log shows {m.TreasureCount} treasures in this match." : "")
                 : "Fortnite showed its Treasures Found screen after this match (from its log; this replay was read before Drop Report could see the moment).",
-            m.Prizes?.FirstOrDefault()?.Trigger switch { "me" => "YOU", "teammate" => "TEAM", _ => "EARNED" })).ToList();
+            m.Prizes?.FirstOrDefault()?.Trigger switch { "me" => "YOU", "teammate" or "teammate-far" => "TEAM", _ => "EARNED" })).ToList();
         var byMode = string.Join(" · ", covered.GroupBy(m => m.Mode).OrderByDescending(g => g.Count())
             .Select(g => $"{g.Key} {g.Count(m => m.TreasureEarned == true)} of {g.Count()}"));
         var moments = won.Where(m => m.Prizes != null).SelectMany(m => m.Prizes).ToList();
         string Times(int n) => n == 1 ? "once" : $"{n} times";
         var how = moments.Count == 0 ? "" :
             $" What set them off: your own chest {Times(moments.Count(x => x.Trigger == "me"))} ({moments.Count(x => x.Trigger == "me" && x.Kind == "broken")} broken), " +
-            $"a teammate's chest {Times(moments.Count(x => x.Trigger == "teammate"))}" +
+            $"a teammate's chest {Times(moments.Count(x => x.Trigger is "teammate" or "teammate-far"))}" +
+            (moments.Any(x => x.Trigger == "teammate-far") ? $" ({moments.Count(x => x.Trigger == "teammate-far")} of them out of view, seen by their search)" : "") +
             (moments.Any(x => x.Trigger == "unseen") ? $", out of view {Times(moments.Count(x => x.Trigger == "unseen"))}" : "") + ".";
         EarnedNote = covered.Count == 0
             ? "Nothing yet. Drop Report spots the moment you earn a treasure in each replay (the game grants its prize handler to you right then), and ties it to the chest that set it off."
@@ -328,7 +340,7 @@ public sealed partial class HomeViewModel : ViewModelBase, IRefreshable
         // the pirate token at a glance (treasure season only)
         var s = Main.Settings;
         var season = all.Where(x => x.Season == Treasure.Season).ToList();
-        var t = Treasure.Build(season, new CountRule(s.CountRefills, s.CountBroken, s.CountTeam), DateTime.UtcNow);
+        var t = Treasure.Build(season, new CountRule(s.CountRefills, s.CountBroken, s.CountTeam, s.CountUnseen), DateTime.UtcNow);
         Token = (t.TokenChance * 100).ToString("0.00", ci) + "%";
         TokenDek = t.DaysLeft > 0 ? $"{(t.ProjectedChance * 100).ToString("0.0", ci)}% by 5 Dec at your pace · {t.Chests:N0} chests so far" : "The token season is over";
         var live = Treasure.SessionAt(DateTime.UtcNow); var next = live ?? Treasure.NextSession(DateTime.UtcNow);

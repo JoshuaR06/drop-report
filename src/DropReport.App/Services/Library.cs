@@ -16,6 +16,10 @@ public sealed class Library
     public ItemTable Names { get; private set; } = ItemTable.Empty;
     public List<MatchSummary> Matches { get; private set; } = new();
     public TreasureLog TreasureLog { get; private set; } = LoadTreasureLog();
+    /// <summary>Known chest spots this season, rebuilt from the map files after new matches (replaced whole, never edited
+    /// in place, so pages reading it never see it half built).</summary>
+    public ChestSpots Spots { get; private set; } = ChestSpots.Load(AppData.ChestSpotsFile);
+    private bool _spotsBuiltThisRun;
     public event Action Changed;
 
     public Library(Settings settings) { _settings = settings; ReloadNames(); }
@@ -28,11 +32,13 @@ public sealed class Library
         foreach (var f in Directory.GetFiles(AppData.Matches, "*.summary.json"))
             try { var s = JsonSerializer.Deserialize<MatchSummary>(File.ReadAllText(f), Json.Options); if (s != null) list.Add(s); } catch { }
         var tl = _settings.ReadGameLog ? TreasureLog : null;
+        var spots = Spots;
         Matches = list.Select(m =>
         {
             var earned = Earned(m, tl);
             var count = earned == true ? Math.Max(Math.Max(m.Prizes?.Count ?? 0, tl?.PopupTreasures(m) ?? 0), 1) : 0;
-            return m with { TreasureEarned = earned, TreasureCount = count, JitterMs = tl?.JitterMs(m), LoadSeconds = tl?.LoadSeconds(m) };
+            return m with { TreasureEarned = earned, TreasureCount = count, JitterMs = tl?.JitterMs(m), LoadSeconds = tl?.LoadSeconds(m),
+                            TeamEstimated = m.Season == spots.Season ? spots.Estimate(m.UnseenTeamSearches) : 0 };
         }).OrderByDescending(m => m.Start ?? DateTime.MinValue).ToList();
         Changed?.Invoke();
     }
@@ -123,8 +129,28 @@ public sealed class Library
             }
         }
         if (analyzed + failed > 0) AppData.Log($"analyzed {analyzed}, failed {failed}");
+        if (analyzed > 0 || !_spotsBuiltThisRun) { _spotsBuiltThisRun = true; BuildSpots(); }
         if (archived > 0 || !_logReadThisRun) { _logReadThisRun = true; ReadGameLogs(); }   // after a match, not every minute
         return new ScanResult(archived, analyzed, failed, false);
+    }
+
+    /// <summary>Chest spots from every treasure-season match's map file (positions only).</summary>
+    private void BuildSpots()
+    {
+        try
+        {
+            var spots = new ChestSpots { Season = Treasure.Season };
+            foreach (var f in Directory.GetFiles(AppData.Matches, "*.summary.json"))   // not Matches: this scan's new ones aren't loaded yet
+            {
+                MatchSummary m = null;
+                try { m = JsonSerializer.Deserialize<MatchSummary>(File.ReadAllText(f), Json.Options); } catch { }
+                if (m?.Season == Treasure.Season && LoadMap(m) is { } map) spots.AddFrom(map);
+            }
+            Spots = spots;
+            spots.Save(AppData.ChestSpotsFile);
+            AppData.Log($"chest spots: {spots.Count} known");
+        }
+        catch (Exception e) { AppData.Log("chest spots not built: " + e.Message); }
     }
 
     private static TreasureLog LoadTreasureLog()

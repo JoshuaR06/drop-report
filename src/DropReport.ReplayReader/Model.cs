@@ -5,7 +5,13 @@ namespace DropReport;
 
 // Everything one match produces. Summary = small (lists, season totals); Map = big (positions for the map view).
 
-public sealed record MatchResult(MatchSummary Summary, MapData Map);
+public sealed record MatchResult(MatchSummary Summary, MapData Map, List<SearchStart> Searches = null);
+
+/// <summary>A pawn began a search (replicated bStartedInteractSearch). Role 0 = me, 1 = teammate, 2 = other.</summary>
+public sealed record SearchStart(double T, int Role, double X, double Y, double? Seconds = null);
+
+/// <summary>Where and when a teammate searched something the replay didn't show (it was out of view).</summary>
+public sealed record SearchMark(double T, double X, double Y);
 
 public sealed record MatchSummary(
     int Version, string File, DateTime? Start, string Branch, int Season, string Playlist, string Mode, string Special,
@@ -14,8 +20,12 @@ public sealed record MatchSummary(
     string Haunt = null,    // the named location you spent the most time near (needs the map data); for headlines
     string Landing = null,  // the named location nearest to where you touched down (null = open ground or no map data)
     List<TreasureReveal> Reveals = null,    // season 43: chests that turned out to hold a treasure
-    List<TreasureMoment> Prizes = null)     // season 43 (v8+): when you earned a treasure (first one per match) and what set it off
+    List<TreasureMoment> Prizes = null,     // season 43 (v8+): when you earned a treasure (first one per match) and what set it off
+    List<SearchMark> UnseenTeamSearches = null)   // v9: teammates' searches out of the replay's view (see TeamEstimate)
 {
+    /// <summary>Of UnseenTeamSearches, those at a known chest spot (ChestSpots): teammates' chest searches the replay
+    /// couldn't show, estimated. Set when loaded, because the chest-spot list grows with every match.</summary>
+    [JsonIgnore] public int TeamEstimated { get; init; }
     /// <summary>From Fortnite's log, not the replay (TreasureLog.Earned): true = the post-match Treasures Found screen
     /// followed this match, false = the log covered it and it didn't, null = no log for that time. Set when loaded.</summary>
     [JsonIgnore] public bool? TreasureEarned { get; init; }
@@ -27,7 +37,8 @@ public sealed record MatchSummary(
 }
 
 /// <summary>The moment the replay owner earned a treasure (from the prize handler; see MatchReader.PrizeHandlers) and what
-/// set it off: the chest search or break by you or a teammate just before it, or "unseen" (nothing in view: a teammate out of
+/// set it off: the chest search or break by you or a teammate just before it, "teammate-far" (v10: an out-of-view teammate's
+/// search just before, seen by its search flag, see TeamEstimate), or "unseen" (nothing in view: a teammate out of
 /// range). Kind = opened or broken. Gold = the game showed its gold treasure chest (a Major or Supreme prize).</summary>
 public sealed record TreasureMoment(double T, string Trigger, string Kind, string Chest, bool Gold, bool Refill);
 

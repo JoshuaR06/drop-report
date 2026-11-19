@@ -38,6 +38,10 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
     public Dictionary<uint, List<(float t, double x, double y)>> PawnTracks { get; } = new();   // ~2 Hz, replay clock
     public Dictionary<uint, List<(float t, uint weapon)>> PawnWeapons { get; } = new();          // CurrentWeapon changes
     public Dictionary<uint, float> BusJumpAt { get; } = new();             // pawn -> first bIsSkydivingFromBus (end of warmup)
+    /// <summary>Pawn's replicated bStartedInteractSearch turning on (a search began), with the pawn's last known spot.</summary>
+    public List<SearchSpan> SearchStarts { get; } = new();
+    private readonly Dictionary<uint, SearchSpan> _searching = new();
+    public sealed class SearchSpan { public uint Pawn; public float T; public float? End; public double X, Y; }
     public Dictionary<uint, string> ActorClass { get; } = new();           // actor guid -> archetype (bare class name in practice)
     public Dictionary<uint, float> ActorOpenedAt { get; } = new();
     public List<DamageHit> Hits { get; } = new();
@@ -208,6 +212,18 @@ public sealed class MatchReader : FortniteReplayReader.ReplayReader
                 {
                     if (!PawnTracks.TryGetValue(pg, out var tr)) PawnTracks[pg] = tr = new();
                     if (tr.Count == 0 || CurrentTimeSeconds - tr[^1].t >= 0.5f) tr.Add((CurrentTimeSeconds, loc.X, loc.Y));
+                }
+                if (pawn.bStartedInteractSearch is bool searching)
+                {
+                    _searching.TryGetValue(pg, out var open);
+                    if (searching && open == null)
+                    {
+                        var at = loc != null && !(loc.X == 0 && loc.Y == 0) ? ((double)loc.X, (double)loc.Y)
+                               : PawnTracks.TryGetValue(pg, out var t2) && t2.Count > 0 ? (t2[^1].x, t2[^1].y) : (double.NaN, double.NaN);
+                        var span = new SearchSpan { Pawn = pg, T = CurrentTimeSeconds, X = at.Item1, Y = at.Item2 };
+                        SearchStarts.Add(span); _searching[pg] = span;
+                    }
+                    else if (!searching && open != null) { open.End = CurrentTimeSeconds; _searching.Remove(pg); }
                 }
                 break;
             case GameState gs:

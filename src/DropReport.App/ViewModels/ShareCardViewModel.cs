@@ -49,7 +49,7 @@ public sealed record ShareCardViewModel(string Kicker, string Headline, List<Til
     {
         var season = all.Where(x => x.Season == Treasure.Season).ToList();
         if (season.Count == 0) return null;
-        var t = Treasure.Build(season, new CountRule(s.CountRefills, s.CountBroken, s.CountTeam), DateTime.UtcNow);
+        var t = Treasure.Build(season, new CountRule(s.CountRefills, s.CountBroken, s.CountTeam, s.CountUnseen), DateTime.UtcNow);
         return $"PIRATE TOKEN CHANCE  {(t.TokenChance * 100).ToString("0.00", CultureInfo.CurrentCulture)}%  ·  {t.Chests:N0} CHESTS ROLLED";
     }
 }

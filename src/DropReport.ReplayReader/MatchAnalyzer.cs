@@ -10,7 +10,7 @@ public static class MatchAnalyzer
 {
     /// <summary>Bump when the summary gains data: the app re-reads older summaries on its next scan.
     /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock. 6 = dug-up treasure chests. 7 = Sprite chest variants, Sprite Locator chests, treasure reveals. 8 = treasure earned (prize moments).</summary>
-    public const int SummaryVersion = 8;
+    public const int SummaryVersion = 10;   // 9 = teammates' searches out of view (TeamEstimate). 10 = treasures set off by them.
 
     public static MatchResult Analyze(string replayPath, ItemTable names, ILogger logger = null, MapGeo geo = null)
     {
@@ -213,6 +213,16 @@ public static class MatchAnalyzer
         var prizes = r.PrizeHandlers.Where(p => p.Path.Contains("TreasureHandler_Generic", StringComparison.OrdinalIgnoreCase))
             .Select(p => Treasure.Attribute(Math.Round(p.T, 1), chestEvents, reveals)).ToList();
 
+        // ---- teammates' searches out of view (pawn search flag; the chest itself isn't in the replay that far away).
+        // My position: pawns send no movement while standing still, so allow 15 s back to the last update.
+        var allSearches = r.SearchStarts.Select(q => new SearchStart(Math.Round(q.T, 1), Role(q.Pawn), Math.Round(q.X), Math.Round(q.Y),
+            q.End is float qe ? Math.Round(qe - q.T, 2) : null)).ToList();
+        var unseen = TeamEstimate.Unseen(allSearches, chestEvents, t => r.PositionAt(myPawns, (float)t, 15), busJump);
+        // a treasure with no chest in view, just after an out-of-view teammate's search: that search set it off
+        // (4 of the 6 "no chest in view" treasures on 19 Nov had one 0.8-3.2 s before)
+        prizes = prizes.Select(p => p.Trigger == "unseen" && unseen.Any(s => s.T <= p.T + 0.3 && s.T >= p.T - 3.5)
+            ? p with { Trigger = "teammate-far", Kind = "opened" } : p).ToList();
+
         // ---- summary
         var playlist = replay.GameData?.CurrentPlaylist ?? "";
         var summary = new MatchSummary(SummaryVersion, Path.GetFileName(file), Rules.StartFromFileName(file), r.Branch, Rules.SeasonOf(r.Branch), playlist,
@@ -221,7 +231,8 @@ public static class MatchAnalyzer
             new EpicStats(me?.Kills is uint mk ? (int)mk : s?.Eliminations is uint se ? (int)se : null, s?.Assists is uint a ? (int)a : null, s?.Accuracy,
                           s?.DamageToPlayers is uint dp ? (int)dp : null, s?.DamageTaken is uint dt ? (int)dt : null,
                           s?.DamageToStructures is uint ds ? (int)ds : null, s?.TotalTraveled is uint tv ? Math.Round(tv / 100.0) : null),
-            chests, seasonItems, damage, fights, death, Reveals: reveals.Count > 0 ? reveals : null, Prizes: prizes.Count > 0 ? prizes : null);
+            chests, seasonItems, damage, fights, death, Reveals: reveals.Count > 0 ? reveals : null, Prizes: prizes.Count > 0 ? prizes : null,
+            UnseenTeamSearches: unseen.Count > 0 ? unseen : null);
 
         // ---- map
         var tracks = r.PawnTracks.Where(kv => kv.Value.Count > 1).Select(kv => new Track(kv.Key, Role(kv.Key),
@@ -232,6 +243,6 @@ public static class MatchAnalyzer
         var zones = (replay.MapData?.SafeZones ?? (IList<SafeZone>)Array.Empty<SafeZone>()).Where(z => z.NextCenter != null).Select(z => new Zone(
             Math.Round(z.StartShrinkTime - off, 1), Math.Round(z.FinishShrinkTime - off, 1), Math.Round(z.NextCenter.X), Math.Round(z.NextCenter.Y), Math.Round(z.NextRadius),
             z.LastCenter == null ? null : Math.Round(z.LastCenter.X), z.LastCenter == null ? null : Math.Round(z.LastCenter.Y), Math.Round(z.LastRadius))).ToList();
-        return new MatchResult(summary, new MapData(r.LastTime, tracks, chestEvents, kills, zones));
+        return new MatchResult(summary, new MapData(r.LastTime, tracks, chestEvents, kills, zones), allSearches);
     }
 }

@@ -10,7 +10,8 @@ public sealed record BoostSession(DateTime StartUtc, DateTime EndUtc, double Mul
 
 /// <summary>Which chest searches you believe roll for the rewards. Nobody outside Epic knows for sure whether refilled or
 /// broken chests count, or whether a teammate's find shares the token, so these are the user's choice.</summary>
-public sealed record CountRule(bool Refills, bool Broken, bool Team)
+/// <param name="Unseen">With Team: also count teammates' chest searches out of the replay's view (estimated, TeamEstimate).</param>
+public sealed record CountRule(bool Refills, bool Broken, bool Team, bool Unseen = true)
 {
     /// <summary>Default: everything the game's logic lets roll. Opening or breaking a chest requests a roll, and a refill
     /// resets the chest's roll flag (B_BuildingContainerOverride_TreasureHunt), so refilled and broken chests count.</summary>
@@ -144,6 +145,7 @@ public static class Treasure
         {
             "me" => $"you {(p.Kind == "broken" ? "broke" : "opened")} a {(p.Refill ? "refilled " : "")}{chest}",
             "teammate" => $"a teammate {(p.Kind == "broken" ? "broke" : "opened")} a {(p.Refill ? "refilled " : "")}{chest} (their chest, your treasure)",
+            "teammate-far" => "a teammate out of view searched a chest (their chest, your treasure; the replay saw them searching, not the chest)",
             _ => "no chest was in view (likely a teammate's chest out of range)",
         };
         return $"Treasure earned at {clock}: {how}." + (p.Gold ? " The gold treasure chest appeared, so it was a Major or Supreme prize (a weekly cosmetic, the Gold Outfit or Pirate Shop Access)." : "");
@@ -156,7 +158,7 @@ public static class Treasure
     {
         int Count(IEnumerable<ChestTypeCount> rows) => rows.Where(r => IsRewardChest(r.Type)).Sum(r =>
             (r.Opened - (rule.Refills ? 0 : r.OpenedRefill)) + (rule.Broken ? r.Broken - (rule.Refills ? 0 : r.BrokenRefill) : 0));
-        return Count(m.Chests.ByType) + (rule.Team ? Count(m.Chests.Team) : 0);
+        return Count(m.Chests.ByType) + (rule.Team ? Count(m.Chests.Team) + (rule.Unseen ? m.TeamEstimated : 0) : 0);
     }
 
     /// <summary>Chance of at least one hit in a set of rolls with per-roll chance p_i: 1 - prod(1 - p_i).</summary>
@@ -176,7 +178,7 @@ public static class Treasure
         int Matches, double ChestsPerMatch, double ChestsPerDay, int DaysLeft,
         double ProjectedChests, double ProjectedChance, IReadOnlyList<(double Chance, double Chests)> Milestones,
         IReadOnlyList<(ChestReward Reward, double Chance, double Rolls)> Others, double ChestsPerWeek, int ChestsThisWeek, List<MatchRolls> PerMatch,
-        int Refills, int Broken, int TeamChests);
+        int Refills, int Broken, int TeamChests, int TeamEstimated = 0);
 
 
     public static Report Build(IReadOnlyCollection<MatchSummary> ms, CountRule rule, DateTime nowUtc)
@@ -210,6 +212,7 @@ public static class Treasure
         return new Report(chests, per.Where(x => x.Multiplier > 1).Sum(x => x.Chests), chance, rolls,
             per.Count, per.Count > 0 ? (double)chests / per.Count : 0, perDay, daysLeft, projected, projectedChance, milestones, others, perWeek, thisWeek, per,
             Sum(r => r.OpenedRefill + r.BrokenRefill, false) + Sum(r => r.OpenedRefill + r.BrokenRefill, true),
-            Sum(r => r.Broken, false) + Sum(r => r.Broken, true), Sum(r => r.Opened + r.Broken, true));
+            Sum(r => r.Broken, false) + Sum(r => r.Broken, true), Sum(r => r.Opened + r.Broken, true),
+            rule.Team && rule.Unseen ? ms.Sum(m => m.TeamEstimated) : 0);
     }
 }

@@ -285,16 +285,27 @@ the game's UI: the post-match "Treasures found" screen, the locker and gizmo whe
   treasure at 5:41 PM) and 5:46 PM (treasure at 5:54 PM). Both earned treasure, but the type isn't known (the log only
   records that a prize screen appeared), and Epic boosts only the token, Gold Outfit and Vehicle & Decal, so 2 matches
   say nothing about the boost. (The owner keeps a separate, non-public tracker of real vs rumored sessions.)
-- **Which modes can drop treasure: the log says so per match.** When a mode is excluded, Fortnite's log writes
-  `LogDelilahTreasureHuntRewards: Playlist has tag Plugin.Playlist.Exclude.Delilah.LootTables, skipping prize pool request`
-  right after the match loads, and no prize pool is requested. Seen 19 Nov 2026 in Respawn Rumble
-  (`playlist_respawn_alt_minimobile`), the day posts claimed it was "farmable again"; Battle Royale matches never log
-  it. Respawn Rumble also saves no replay.
   Earlier note (before the extension was found): two matches ran into a window
   (replay clock + chest open times): 14 Nov 1:43 PM match had only its last ~60 s after 2 PM (0 chests; its treasure
   came at 1:45 PM); 14 Nov 8:53 PM match ran to 9:10 PM with 20 team searches after 9 PM (3 Rare, 1 Sprite), no
   treasure. At ~1 in 89 per search, 20 searches give treasure ~20% of the time (~37% if the odds doubled), so one
   match says nothing. Not known whether the boost follows match start or chest-open time.
+- **Which modes can drop treasure: the log says so per match.** When a mode is excluded, Fortnite's log writes
+  `LogDelilahTreasureHuntRewards: Playlist has tag Plugin.Playlist.Exclude.Delilah.LootTables, skipping prize pool request`
+  right after the match loads, and no prize pool is requested. Seen 19 Nov 2026 in Respawn Rumble
+  (`playlist_respawn_alt_minimobile`), the day posts claimed it was "farmable again"; Battle Royale matches never log
+  it. Respawn Rumble also saves no replay.
+- **Teammates' chests out of view (19 Nov 2026).** The replay only carries chest openings within about 250 m of the
+  owner (of 1,383 teammate openings seen, 188 were beyond 200 m but only 30 beyond 250 m: the server's relevancy
+  range). Teammates' pawns are sent at any distance (positions seen up to 1.4 km), and the pawn's replicated
+  `bStartedInteractSearch` turns on when a search starts, at any distance too. It also fires for ammo boxes and other
+  containers, so a search is counted as a chest search when it lasted at least 0.6 s (chest searches take 0.63-0.87 s,
+  10th-90th percentile) and the searcher stood within 3 m of a spot where a rolling chest has been opened in the
+  owner's matches. Checked against nearby teammate searches (where the replay shows the chest), with chest spots
+  taken from the other matches only: 84% found, 81% of finds real, 860 estimated vs 880 real (about 2% low), about
+  1.3 searches off per match. Across 75 season-43 matches that adds about 746 teammate chests to the 1,181 the replay
+  showed. Of 6 treasures with no chest in view, 4 came 0.8-3.2 s after such an out-of-view search.
+  (`TeamEstimate`, `ChestSpots`; summary v10.)
 
 Research tools: `dropreport scan-rewards`, `scan-paths`, `fields`, `chest-looks`, `gizmos` (CLI); the game-file reader in
 the author's workbench (`--find`, `--dump` incl. data/curve tables, `--cat` for config files, `--json` with blueprint

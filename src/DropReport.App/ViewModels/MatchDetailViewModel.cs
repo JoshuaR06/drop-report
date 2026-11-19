@@ -100,7 +100,8 @@ public sealed partial class MatchDetailViewModel : ViewModelBase
             new Tile("ELIMINATIONS", Fmt.N(m.Epic.Elims), $"{m.Fights.Knocks} knocks"),
             new Tile("DAMAGE", Fmt.N(m.Epic.DamageToPlayers), "to players"),
             new Tile("ACCURACY", m.Epic.Accuracy != null ? Fmt.Pct(m.Epic.Accuracy * 100) : "–", $"{m.Damage.Headshots} headshots"),
-            new Tile("CHESTS", (m.Chests.Opened + m.Chests.Broken + team).ToString(), $"you {m.Chests.Opened + m.Chests.Broken} · team {team}"),
+            new Tile("CHESTS", (m.Chests.Opened + m.Chests.Broken + team).ToString(), $"you {m.Chests.Opened + m.Chests.Broken} · team {team}" +
+                (m.TeamEstimated > 0 ? $" · about {m.TeamEstimated} more out of view" : "")),
         };
         var take = new Dictionary<string, string> { ["me"] = "", ["teammate"] = "teammate took", ["other"] = "enemy took", ["nobody"] = "left" };
         Chests = (Map?.Chests ?? new()).Where(c => c.Who == "me" || c.Who == "teammate").Select(c => new ChestLine(c.T, Fmt.Clock(c.T),

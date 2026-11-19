@@ -40,7 +40,7 @@ public sealed partial class PostMatchViewModel : ViewModelBase
         if (m.Season == Treasure.Season)
         {
             var s = main.Settings;
-            var rule = new CountRule(s.CountRefills, s.CountBroken, s.CountTeam);
+            var rule = new CountRule(s.CountRefills, s.CountBroken, s.CountTeam, s.CountUnseen);
             var season = all.Where(x => x.Season == Treasure.Season).ToList();
             var now = Treasure.Build(season, rule, DateTime.UtcNow);
             var before = Treasure.Build(season.Where(x => x.File != m.File).ToList(), rule, DateTime.UtcNow);

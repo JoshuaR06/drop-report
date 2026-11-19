@@ -101,10 +101,12 @@
       <WrapPanel>
         <ToggleSwitch IsChecked="{Binding CountRefills}" OnContent="Refilled chests count" OffContent="Refilled chests don't count" Margin="0,0,36,0" />
         <ToggleSwitch IsChecked="{Binding CountBroken}" OnContent="Broken chests count" OffContent="Broken chests don't count" Margin="0,0,36,0" />
-        <ToggleSwitch IsChecked="{Binding CountTeam}" OnContent="Teammates' chests count" OffContent="Only my chests count" />
+        <ToggleSwitch IsChecked="{Binding CountTeam}" OnContent="Teammates' chests count" OffContent="Only my chests count" Margin="0,0,36,0" />
+        <ToggleSwitch IsChecked="{Binding CountUnseen}" IsEnabled="{Binding CountTeam}" OnContent="Out-of-view teammates estimated" OffContent="Only teammates in view" />
       </WrapPanel>
       <TextBlock Classes="note" Margin="0,6,0,0" MaxWidth="860" HorizontalAlignment="Left"
-                 Text="Refilled = a chest searched earlier in the same match (chests refill over time since v43.00). Only the chest kinds on the game's treasure list roll: extraction crates and ammo boxes never do. Teammates out of your sight aren't in your replay, so team counts are a minimum." />
+                 Text="Refilled = a chest searched earlier in the same match (chests refill over time since v43.00). Only the chest kinds on the game's treasure list roll: extraction crates and ammo boxes never do." />
+      <TextBlock Classes="note" Margin="0,6,0,0" MaxWidth="860" HorizontalAlignment="Left" Text="{Binding UnseenNote}" />
 
       <!-- matches that earned a treasure (Fortnite's log) -->
       <Label Classes="section" Content="MATCHES THAT EARNED TREASURE" />
