@@ -114,7 +114,7 @@ in chests...", patch notes v43.00 / v43.10); **datamine** (Llamalaxy on X, 7 and
 
 **Certain: game files and live config**
 - Prizes (`DT_DelilahTreasureHunt_Prizes`): Pirate Shop Access (Supreme, `PreRollOnly`, `PerMatchMaxAmount = 1`, granted
-  by a dedicated "Clover" granter); Gold Outfit (Supreme in the files, **Major** in the live config); Pickaxe, Back Bling,
+  by its own `CloverRewardGrant` granter); Gold Outfit (Supreme in the files, **Major** in the live config); Pickaxe, Back Bling,
   Jam Track, Loading Screen, Gold Car Decal (Major; rows 14-33 look like later weeks' rotations, by numbering only);
   Sprite Gizmos (Standard). Cosmetics and the token are account quests (`Quest_DPID_ItemN`). The weekly prize list in
   the frontend table is placeholder text; the real weekly pools are on Epic's server.
@@ -129,13 +129,40 @@ in chests...", patch notes v43.00 / v43.10); **datamine** (Llamalaxy on X, 7 and
   code, not in the readable game data.
 - None of it reaches players: in replays the treasure controller on the game state carries no fields, and the chest's
   treasure component isn't replicated, so no replay can show a pre-rolled or forced prize.
-- Not known: what "pre-roll" means in practice (when it happens, whether it pins a prize to a chest, whether refilled or
-  broken chests can receive a pre-rolled prize). It can't be the per-chest roll itself, since every prize is rolled
-  before its chest opens. The names fit a prize reserved ahead of time from Epic's limited stock (`AttemptPreRoll` = use
-  a reserved one if there is one, otherwise roll at the chest; `PreRollOnly` = reserved only), but that is a reading of
-  names, not a finding. Datamine agrees on the setting (Llamalaxy, reported by TheGamer 7 Nov 2026) and says it doesn't
-  prove a token is assigned to a chest at match start. Epic declined to explain the odds ("everyone has an equal
-  opportunity", per TheGamer).
+- No blueprint touches pre-roll: a search of every treasure-hunt asset's bytecode for `PreRoll`, `ForcedPrize`,
+  `ForcedReward`, `Inventory` and `RolledPrize` finds only the prize tables. It is all compiled server code.
+- "Clover" is the code name of the whole treasure-hunt system (`DelilahTreasureHuntCloverController_Server`, `_Frontend`),
+  not only the token's granter. The prize granters are: none (the 25 cosmetic rows: account quests), `InGameItemGranter`
+  (the 5 Gizmo rows) and `CloverRewardGrant` (Pirate Shop Access only).
+- **Prize reservations (game config `DefaultEngine.ini`, also re-sent in the live config on 16 Nov):** Epic runs a
+  backend service named `clover` with exactly two endpoints:
+  `.../clover/api/v1/{level}/deployments/{deploymentId}/domains/{domain}/sessions/{sessionId}/prizes/{prizeId}/prize-reservation`
+  and the same path ending `/prize-reservation/claim`. Both use the dedicated-server path (`ds`), so the match server
+  calls them, not the player's PC. A reservation is made for one **match session** and one **prize id**, then claimed.
+  Pirate Shop Access is the only prize whose id is a GUID (the other 30 are `DelilahPrize:dpid_itemN`). The files don't
+  say which prizes go through it.
+- A roll result (`DelilahTreasureHuntPrizeRollResult`) carries a pool id, a **list** of prize ids and a backend error
+  code; pools carry start/end times and per-prize `StartingInventory` / `RemainingInventory`. So prizes come from
+  limited stock held by Epic's backend, not from odds decided inside the match.
+- Every cosmetic and token quest is completed by `CustomVerb.DelilahTreasureHunt.ManualReward` ("Reserved for
+  manual-only prize objectives; gameplay must not broadcast this verb."): the server grants them directly, nothing in
+  gameplay does. The server also tracks `bHasFinishedRewardDispatch`.
+- Ranked: the reward config lists `Athena.Playlist.Habanero.BR` (Ranked Battle Royale) as a ranked playlist and has
+  lists for prizes suppressed or disabled in ranked. Both lists are empty in the game files and the live config doesn't
+  fill them, so as shipped, ranked doesn't switch off any prize. (Epic's backend could still treat ranked differently.)
+- Nothing on the PC sees a reservation: the player's Fortnite log has no reservation, roll or pre-roll lines (14 logs),
+  replays carry no fields, and the token's prize row is not changed by the live config.
+- **What pre-roll most likely means (inference, not a finding):** an attempt to reserve the prize from Epic's limited
+  stock for this match. `AttemptPreRoll` = use a reservation if one is granted, otherwise roll normally; `PreRollOnly` =
+  the token can only be awarded through a successful reservation, never by a normal chest roll. The reservation URL is
+  scoped to the match session (fits "decided once per match"), but the prize request that carries `bPreRoll` also
+  carries the chest and the player (fits "attempted at each chest search"). The files can't settle which. Either way,
+  `PerMatchMaxAmount = 1` caps it at one token per match for the whole lobby.
+- Not known: when the reservation is attempted (match start or each search), how a reserved token is matched to a chest
+  or player (`ForcedPrizeIds` is keyed by an object; which kind isn't recorded), and whether broken or refilled chests can
+  receive it. Datamine agrees on the setting (Llamalaxy, reported by TheGamer 7 Nov 2026) and says it doesn't prove a
+  token is assigned to a chest at match start. Epic declined to explain the odds ("everyone has an equal opportunity",
+  per TheGamer).
 - Gizmo prizes map to gizmo-wheel ("MorningBell") account entitlements (`DelilahTreasureHuntSharedGame.ini`: prizes 9-13
   -> `/MorningBell/Delilah/Item00-04`). In-game names: Extraction Accelerator, Portable Extractor, Golden Firework,
   Sprite Locator, Lucky Locator. Gizmos also come from Sprite Mastery and quests (Epic, v43.00). The loot tables still
@@ -241,6 +268,33 @@ pre-roll section), and no chest looks different.
 is, and where a given Gizmo came from. Apart from the screen line above, Fortnite's local log doesn't record grants or
 treasure-quest progress. The record is
 the game's UI: the post-match "Treasures found" screen, the locker and gizmo wheel, the treasure-hunt quests.
+
+**Statistics from the owner's matches (17 Nov, 59 season-43 matches, 18 with treasure; replay-detected):**
+- Treasure goes with chest searches (the owner's plus teammates' in view): matches with treasure averaged 45.5 searches,
+  others 29.8 (permutation test, one-sided p = 0.0014). By searches: 0-14 -> 0 of 9 matches, 15-29 -> 2 of 15, 30-44 ->
+  7 of 17, 45-59 -> 5 of 10, 60+ -> 4 of 8. Solo: 1 of 11.
+- A "same chance on every search" model fits far better than "same chance every match" (likelihood ratio about 160) and
+  gives about 1 prize per 89 searches (any prize, Gizmos included; team counts are a minimum and only the first prize
+  per match is counted). Dataminers' estimate is about 1 in 100.
+- Limits: chest searches and time survived rise together, and among matches of 15+ minutes the treasure and no-treasure
+  groups searched about the same (45.2 vs 43.9). Both "every search rolls" and "a prize reserved for the match lands on
+  one of its searches" predict more treasure with more searches, so this does NOT settle what pre-roll does. The
+  practical result holds either way: more team chest searches, more treasure.
+- Treasure Hours (Saturdays 2-4 and 9-11 PM ET): **correction 18 Nov:** Epic extended 14 Nov's afternoon window to
+  6 PM ET (Fortnite Status on X, 14 Nov, after a disconnect bug). So 2 matches did start inside one: 5:28 PM (win,
+  treasure at 5:41 PM) and 5:46 PM (treasure at 5:54 PM). Both earned treasure, but the type isn't known (the log only
+  records that a prize screen appeared), and Epic boosts only the token, Gold Outfit and Vehicle & Decal, so 2 matches
+  say nothing about the boost. (The owner keeps a separate, non-public tracker of real vs rumored sessions.)
+- **Which modes can drop treasure: the log says so per match.** When a mode is excluded, Fortnite's log writes
+  `LogDelilahTreasureHuntRewards: Playlist has tag Plugin.Playlist.Exclude.Delilah.LootTables, skipping prize pool request`
+  right after the match loads, and no prize pool is requested. Seen 19 Nov 2026 in Respawn Rumble
+  (`playlist_respawn_alt_minimobile`), the day posts claimed it was "farmable again"; Battle Royale matches never log
+  it. Respawn Rumble also saves no replay.
+  Earlier note (before the extension was found): two matches ran into a window
+  (replay clock + chest open times): 14 Nov 1:43 PM match had only its last ~60 s after 2 PM (0 chests; its treasure
+  came at 1:45 PM); 14 Nov 8:53 PM match ran to 9:10 PM with 20 team searches after 9 PM (3 Rare, 1 Sprite), no
+  treasure. At ~1 in 89 per search, 20 searches give treasure ~20% of the time (~37% if the odds doubled), so one
+  match says nothing. Not known whether the boost follows match start or chest-open time.
 
 Research tools: `dropreport scan-rewards`, `scan-paths`, `fields`, `chest-looks`, `gizmos` (CLI); the game-file reader in
 the author's workbench (`--find`, `--dump` incl. data/curve tables, `--cat` for config files, `--json` with blueprint

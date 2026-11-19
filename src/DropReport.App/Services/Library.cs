@@ -140,12 +140,14 @@ public sealed class Library
     /// and only the marker's time is kept (the log also holds Epic names, which are never read into the app).</summary>
     private void ReadGameLogs()
     {
-        if (!_settings.ReadGameLog || !Directory.Exists(AppData.FortniteLogs) || MatchInProgress()) return;
+        if (!_settings.ReadGameLog || !Directory.Exists(AppData.FortniteLogs)) return;
+        if (MatchInProgress()) { AppData.Log("game log: match in progress, not read"); return; }
         var changed = false;
         foreach (var f in Directory.GetFiles(AppData.FortniteLogs, "FortniteGame*.log"))
             try { changed |= TreasureLog.AddFile(f); } catch (Exception e) { AppData.Log($"game log not read {Path.GetFileName(f)}: {e.Message}"); }
         if (!changed) return;
-        try { File.WriteAllText(AppData.TreasureLogFile, JsonSerializer.Serialize(TreasureLog)); } catch { }
+        try { File.WriteAllText(AppData.TreasureLogFile, JsonSerializer.Serialize(TreasureLog)); }
+        catch (Exception e) { AppData.Log($"treasure log not saved: {e.GetType().Name}: {e.Message}"); }
         AppData.Log($"game log: {TreasureLog.Screens.Count} treasure screens on record");
     }
 

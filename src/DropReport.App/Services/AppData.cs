@@ -37,9 +37,25 @@ public static class AppData
     private static string Dir(string name) { var d = Path.Combine(Root, name); Directory.CreateDirectory(d); return d; }
 
     private static readonly object LogLock = new();
+    /// <summary>Where a log line goes when dropreport.log can't be written (so a failing write is never silent again).</summary>
+    public static string FallbackLogFile => Path.Combine(Path.GetTempPath(), "DropReport-fallback.log");
+
     public static void Log(string msg)
     {
-        try { lock (LogLock) File.AppendAllText(LogFile, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {msg}{Environment.NewLine}"); } catch { }
+        var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {msg}{Environment.NewLine}";
+        lock (LogLock)
+        {
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                try { File.AppendAllText(LogFile, line); return; }
+                catch (Exception e) when (attempt < 2) { _ = e; Thread.Sleep(50); }   // brief sharing clash: try again
+                catch (Exception e)
+                {
+                    try { File.AppendAllText(FallbackLogFile, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [could not write {LogFile}: {e.GetType().Name}: {e.Message}] {msg}{Environment.NewLine}"); }
+                    catch { }
+                }
+            }
+        }
     }
 }
 

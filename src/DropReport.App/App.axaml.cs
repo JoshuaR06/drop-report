@@ -42,7 +42,8 @@ public partial class App : Application
                 SetUpTray(desktop);
                 win.Closing += (_, e) =>
                 {
-                    if (_quitting || !vm.Settings.CloseToTray) { Quit(desktop); return; }
+                    // Windows signing out or shutting down: let it (hiding to the tray here blocked a restart on 17 Nov)
+                    if (_quitting || !vm.Settings.CloseToTray || e.CloseReason == WindowCloseReason.OSShutdown) { Quit(desktop); return; }
                     e.Cancel = true; win.Hide();
                 };
                 if (!a.Contains("--tray")) desktop.MainWindow = win;   // --tray: start hidden (sign-in launch)
