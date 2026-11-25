@@ -361,6 +361,27 @@ public class TreasureTests
     }
 
     [Fact]
+    public void Treasure_hours_count_each_chest_by_its_own_time()
+    {
+        // a match that starts at 1:59 PM ET (a minute before the 21 Nov window) and runs into it: 2 chests before 2 PM, 3 after
+        var start = new DateTime(2026, 11, 21, 18, 59, 0, DateTimeKind.Utc).ToLocalTime();
+        var rolls = new List<ChestRoll> { new(20, false, false, false), new(50, false, false, false),
+                                          new(90, false, false, false), new(200, true, false, false), new(400, false, true, false) };
+        var m = M(start, new() { new("Chest", 3, 1) }, new() { new("Chest", 1, 0) }, busJump: 10) with { Rolls = rolls };
+        var r = Treasure.Build(new[] { m }, CountRule.Default, start.ToUniversalTime().AddDays(1));
+        Assert.Equal(5, r.Chests);
+        Assert.Equal(3, r.BoostedChests);                 // the ones after 2 PM; the match start alone would have said 0
+        Assert.Equal(2 + 3 * 1.5, r.TokenRolls, 6);
+        var noTeam = Treasure.Build(new[] { m }, CountRule.Default with { Team = false }, start.ToUniversalTime().AddDays(1));
+        Assert.Equal(2, noTeam.BoostedChests);
+
+        // 14 Nov afternoon ran to 6 PM ET (Epic's extension); the hunt's last day has no sessions
+        Assert.Equal(1.5, Treasure.SessionAt(new DateTime(2026, 11, 14, 22, 30, 0, DateTimeKind.Utc)).Multiplier);
+        Assert.True(Treasure.SessionAt(new DateTime(2026, 11, 28, 19, 30, 0, DateTimeKind.Utc)).Confirmed);
+        Assert.Null(Treasure.SessionAt(new DateTime(2026, 12, 5, 19, 30, 0, DateTimeKind.Utc)));
+    }
+
+    [Fact]
     public void Report_projects_at_your_pace()
     {
         var now = new DateTime(2026, 11, 16, 12, 0, 0, DateTimeKind.Utc);

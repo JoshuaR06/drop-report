@@ -285,6 +285,9 @@ the game's UI: the post-match "Treasures found" screen, the locker and gizmo whe
   treasure at 5:41 PM) and 5:46 PM (treasure at 5:54 PM). Both earned treasure, but the type isn't known (the log only
   records that a prize screen appeared), and Epic boosts only the token, Gold Outfit and Vehicle & Decal, so 2 matches
   say nothing about the boost. (The owner keeps a separate, non-public tracker of real vs rumored sessions.)
+  **v0.1.3 (25 Nov):** the boost now goes by each chest's own time (summary v11 stores it), not the match start, so
+  matches that straddle a window edge count right; the odds file has the 14 Nov extension, 28 Nov at 1.5x (Epic's
+  Golden Week post) and no 5 Dec sessions (the hunt ends at 9 AM ET that day). On the owner's matches: 535 -> 571 boosted.
   Earlier note (before the extension was found): two matches ran into a window
   (replay clock + chest open times): 14 Nov 1:43 PM match had only its last ~60 s after 2 PM (0 chests; its treasure
   came at 1:45 PM); 14 Nov 8:53 PM match ran to 9:10 PM with 20 team searches after 9 PM (3 Rare, 1 Sprite), no

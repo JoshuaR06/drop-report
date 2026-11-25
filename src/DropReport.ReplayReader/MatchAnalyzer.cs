@@ -10,7 +10,7 @@ public static class MatchAnalyzer
 {
     /// <summary>Bump when the summary gains data: the app re-reads older summaries on its next scan.
     /// 2 = chest refills + landing spot. 4 = re-read after a reverted landmark filter (3). 5 = elimination credit follows the knock. 6 = dug-up treasure chests. 7 = Sprite chest variants, Sprite Locator chests, treasure reveals. 8 = treasure earned (prize moments).</summary>
-    public const int SummaryVersion = 10;   // 9 = teammates' searches out of view (TeamEstimate). 10 = treasures set off by them.
+    public const int SummaryVersion = 11;   // 9 = teammates' searches out of view (TeamEstimate). 10 = treasures set off by them. 11 = each chest's time (Treasure Hours per chest).
 
     public static MatchResult Analyze(string replayPath, ItemTable names, ILogger logger = null, MapGeo geo = null)
     {
@@ -232,7 +232,9 @@ public static class MatchAnalyzer
                           s?.DamageToPlayers is uint dp ? (int)dp : null, s?.DamageTaken is uint dt ? (int)dt : null,
                           s?.DamageToStructures is uint ds ? (int)ds : null, s?.TotalTraveled is uint tv ? Math.Round(tv / 100.0) : null),
             chests, seasonItems, damage, fights, death, Reveals: reveals.Count > 0 ? reveals : null, Prizes: prizes.Count > 0 ? prizes : null,
-            UnseenTeamSearches: unseen.Count > 0 ? unseen : null);
+            UnseenTeamSearches: unseen.Count > 0 ? unseen : null,
+            Rolls: myChests.Concat(teamChests).Where(c => Treasure.IsRewardChest(c.Chest)).OrderBy(c => c.T)
+                .Select(c => new ChestRoll(c.T, c.Who == "teammate", c.Kind == "broken", c.Refill)).ToList());
 
         // ---- map
         var tracks = r.PawnTracks.Where(kv => kv.Value.Count > 1).Select(kv => new Track(kv.Key, Role(kv.Key),

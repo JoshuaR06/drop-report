@@ -322,7 +322,8 @@ if (args.Length >= 1 && args[0] == "insights")
 {
     // what the Treasure Hunt / Weapons / Drop spots pages will say, from the app's saved match summaries
     var season = args.Length >= 2 ? int.Parse(args[1]) : 43;
-    var ms = Directory.GetFiles(Path.Combine(dataRoot, "matches"), "*.summary.json")
+    var dir = args.Length >= 3 ? args[2] : Path.Combine(dataRoot, "matches");   // optional: another folder of summaries
+    var ms = Directory.GetFiles(dir, "*.summary.json")
         .Select(f => JsonSerializer.Deserialize<MatchSummary>(File.ReadAllText(f), Json.Options)).Where(m => m?.Season == season).ToList();
     var t = Treasure.Build(ms, CountRule.Default, DateTime.UtcNow);
     Console.WriteLine($"season {season}: {ms.Count} matches");

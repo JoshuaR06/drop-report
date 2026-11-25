@@ -21,7 +21,8 @@ public sealed record MatchSummary(
     string Landing = null,  // the named location nearest to where you touched down (null = open ground or no map data)
     List<TreasureReveal> Reveals = null,    // season 43: chests that turned out to hold a treasure
     List<TreasureMoment> Prizes = null,     // season 43 (v8+): when you earned a treasure (first one per match) and what set it off
-    List<SearchMark> UnseenTeamSearches = null)   // v9: teammates' searches out of the replay's view (see TeamEstimate)
+    List<SearchMark> UnseenTeamSearches = null,   // v9: teammates' searches out of the replay's view (see TeamEstimate)
+    List<ChestRoll> Rolls = null)   // v11: when each chest that rolls for treasure was searched (Treasure Hours go by these times)
 {
     /// <summary>Of UnseenTeamSearches, those at a known chest spot (ChestSpots): teammates' chest searches the replay
     /// couldn't show, estimated. Set when loaded, because the chest-spot list grows with every match.</summary>
@@ -41,6 +42,10 @@ public sealed record MatchSummary(
 /// search just before, seen by its search flag, see TeamEstimate), or "unseen" (nothing in view: a teammate out of
 /// range). Kind = opened or broken. Gold = the game showed its gold treasure chest (a Major or Supreme prize).</summary>
 public sealed record TreasureMoment(double T, string Trigger, string Kind, string Chest, bool Gold, bool Refill);
+
+/// <summary>One chest search or break after the bus jump that rolls for treasure (the same chests ChestStats counts), with
+/// its time: a Treasure Hours boost applies to the chests opened inside the window, not to the whole match.</summary>
+public sealed record ChestRoll(double T, bool Team, bool Broken, bool Refill);
 
 /// <summary>A treasure reveal: a chest holding a treasure was opened or broken and the game swapped in its animated chest.</summary>
 /// <param name="Who">me, teammate, other or unknown: the opener, else whoever searched or broke a chest at that moment.</param>

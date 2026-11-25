@@ -47,7 +47,9 @@ public static class Treasure
         return d;
     }
 
-    // Saturdays, 2-4 PM and 9-11 PM US Eastern (EST = UTC-5 in November). 7 Nov: 1.5x then 2x (Epic). Later dates: 1.5x as reported.
+    // Saturdays, 2-4 PM and 9-11 PM US Eastern (EST = UTC-5 in November). 7 Nov: 1.5x then 2x (Epic). 14 Nov: the afternoon
+    // ran to 6 PM (Epic extended it after a disconnect bug). 28 Nov: 1.5x (Epic's Golden Week post). The hunt ends 5 Dec 9 AM ET,
+    // before that day's sessions would start, so there are none on 5 Dec.
     public static IReadOnlyList<BoostSession> Sessions { get; private set; } = BuildSessions();
 
     /// <summary>Where the odds and schedule came from ("built in" or the date of the downloaded file).</summary>
@@ -68,16 +70,16 @@ public static class Treasure
     }
 
     /// <summary>The built-in values as an odds file (what data/treasure.json starts from).</summary>
-    public static Data BuiltIn() => new(Season, SeasonEndUtc, Rewards.ToList(), Sessions.ToList(), "2026-11-16");
+    public static Data BuiltIn() => new(Season, SeasonEndUtc, Rewards.ToList(), Sessions.ToList(), "2026-11-25");
 
     private static List<BoostSession> BuildSessions()
     {
         var list = new List<BoostSession>();
-        foreach (var day in new[] { 7, 14, 21, 28, 35 })   // 35 Nov = 5 Dec
+        foreach (var day in new[] { 7, 14, 21, 28 })
         {
-            var d = new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(day - 1);
-            list.Add(new BoostSession(d.AddHours(19), d.AddHours(21), 1.5, Confirmed: day == 7));
-            list.Add(new BoostSession(d.AddHours(26), d.AddHours(28), day == 7 ? 2.0 : 1.5, Confirmed: day == 7));
+            var d = new DateTime(2026, 11, day, 0, 0, 0, DateTimeKind.Utc);
+            list.Add(new BoostSession(d.AddHours(19), d.AddHours(day == 14 ? 23 : 21), 1.5, Confirmed: day is 7 or 28));
+            list.Add(new BoostSession(d.AddHours(26), d.AddHours(28), day == 7 ? 2.0 : 1.5, Confirmed: day is 7 or 28));
         }
         return list;
     }
@@ -170,7 +172,36 @@ public static class Treasure
     /// <summary>Rolls needed for a given chance of at least one hit.</summary>
     public static double RollsFor(double chance, double p) => Math.Log(1 - chance) / Math.Log(1 - p);
 
-    public sealed record MatchRolls(MatchSummary Match, int Chests, double Multiplier);
+    /// <param name="Rolls">Chests weighted by their boost (a chest in a 1.5x window counts 1.5).</param>
+    /// <param name="LogMiss">log of the chance this match's chests all missed the token.</param>
+    public sealed record MatchRolls(MatchSummary Match, int Chests, int Boosted, double Rolls, double LogMiss);
+
+    /// <summary>One match's token rolls. Each chest takes the boost of the moment it was searched (v11 summaries carry each
+    /// chest's time; older ones fall back to the match start). Teammates' chests out of view take the average boost over
+    /// their unseen searches' times.</summary>
+    public static MatchRolls Weigh(MatchSummary m, CountRule rule, double p)
+    {
+        var n = Eligible(m, rule);
+        var t0 = DateTime.SpecifyKind(m.Start.Value, DateTimeKind.Local).ToUniversalTime();
+        double At(double t) => SessionAt(t0.AddSeconds(t))?.Multiplier ?? 1.0;
+        var mults = new List<double>();
+        var boosted = 0;
+        if (m.Rolls == null) { mults.AddRange(Enumerable.Repeat(At(0), n)); boosted = At(0) > 1 ? n : 0; }
+        else
+        {
+            mults.AddRange(m.Rolls.Where(r => (rule.Team || !r.Team) && (rule.Broken || !r.Broken) && (rule.Refills || !r.Refill)).Select(r => At(r.T)));
+            boosted = mults.Count(x => x > 1);
+            var est = Math.Max(0, n - mults.Count);   // teammates' chests out of view (TeamEstimated)
+            if (est > 0)
+            {
+                var marks = m.UnseenTeamSearches is { Count: > 0 } u ? u.Select(s => At(s.T)).ToList() : new List<double> { At(0) };
+                mults.AddRange(Enumerable.Repeat(marks.Average(), est));
+                boosted += (int)Math.Round(est * marks.Count(x => x > 1) / (double)marks.Count);
+            }
+        }
+        return Result(boosted);
+        MatchRolls Result(int b) => new(m, n, b, mults.Sum(), mults.Sum(x => Math.Log(1 - Math.Min(p * x, 1))));
+    }
 
     /// <summary>Everything the Treasure Hunt page shows, for the matches given (already filtered to this season).</summary>
     public sealed record Report(
@@ -184,14 +215,10 @@ public static class Treasure
     public static Report Build(IReadOnlyCollection<MatchSummary> ms, CountRule rule, DateTime nowUtc)
     {
         var p = 1.0 / Rewards[0].OneIn;
-        var per = ms.Where(m => m.Start != null).OrderBy(m => m.Start).Select(m =>
-        {
-            var utc = DateTime.SpecifyKind(m.Start.Value, DateTimeKind.Local).ToUniversalTime();
-            return new MatchRolls(m, Eligible(m, rule), SessionAt(utc)?.Multiplier ?? 1.0);
-        }).ToList();
+        var per = ms.Where(m => m.Start != null).OrderBy(m => m.Start).Select(m => Weigh(m, rule, p)).ToList();
         var chests = per.Sum(x => x.Chests);
-        var rolls = per.Sum(x => x.Chests * x.Multiplier);
-        var chance = AtLeastOne(per.Select(x => Enumerable.Repeat(p * x.Multiplier, x.Chests)).SelectMany(x => x));
+        var rolls = per.Sum(x => x.Rolls);
+        var chance = 1 - Math.Exp(per.Sum(x => x.LogMiss));
 
         // pace: eligible chests per calendar day across the days you actually played this season
         var first = per.Count > 0 ? DateTime.SpecifyKind(per[0].Match.Start.Value, DateTimeKind.Local).ToUniversalTime() : nowUtc;
@@ -209,7 +236,7 @@ public static class Treasure
         var others = Rewards.Skip(1).Select(r => (r, r.Weekly ? AtLeastOne(thisWeek, 1.0 / r.OneIn) : AtLeastOne(chests, 1.0 / r.OneIn), r.Weekly ? thisWeek : (double)chests)).ToList();
 
         int Sum(Func<ChestTypeCount, int> f, bool team) => ms.Sum(m => (team ? m.Chests.Team : m.Chests.ByType).Where(r => IsRewardChest(r.Type)).Sum(f));
-        return new Report(chests, per.Where(x => x.Multiplier > 1).Sum(x => x.Chests), chance, rolls,
+        return new Report(chests, per.Sum(x => x.Boosted), chance, rolls,
             per.Count, per.Count > 0 ? (double)chests / per.Count : 0, perDay, daysLeft, projected, projectedChance, milestones, others, perWeek, thisWeek, per,
             Sum(r => r.OpenedRefill + r.BrokenRefill, false) + Sum(r => r.OpenedRefill + r.BrokenRefill, true),
             Sum(r => r.Broken, false) + Sum(r => r.Broken, true), Sum(r => r.Opened + r.Broken, true),
